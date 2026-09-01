@@ -1,0 +1,27 @@
+{
+  "manifest": 1,
+
+  "extension": {
+    "id": "wxl-wrathclassicapi",
+    "version": "1.0.0",
+    "abi": "1.1",
+    "entry": "wxl-wrathclassicapi.dll",
+
+    "hooks": []
+  },
+
+  "deploy": {
+    "mode": "release",
+    "match": "*.dll"
+  },
+
+  "listing": {
+    "title": "WrathClassicAPI",
+    "description": "store/description.md",
+    "tagline": "Convenience Lua APIs for 3.3.5a: encoding utilities, and spell, unit, item, quest and tooltip helpers.",
+    "categories": ["interface", "gameplay"],
+    "accent": "#4a7fc8"
+  },
+
+  "license": "GPL-3.0-or-later"
+}
