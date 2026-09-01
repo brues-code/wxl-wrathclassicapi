@@ -1,11 +1,11 @@
 # wxl-wrathclassicapi
 
-A [WarcraftXL](https://github.com/) extension that adds the WrathClassicAPI Lua
+A [WarcraftXL](https://warcraftxl.github.io/) extension that adds the WrathClassicAPI Lua
 functions to the World of Warcraft 3.3.5a (build 12340) client. Addons call the
 new globals and `C_*` namespaces directly — no companion addon required.
 
 This repository is a thin front-end. The API implementations, client offsets and
-Lua glue live in the shared [WrathClassicAPI](../WrathClassicAPI) core, which also
+Lua glue live in the shared [WrathClassicAPI](https://github.com/brues-code/WrathClassicAPI) core, which also
 ships as a standalone LichLoader-injected DLL. This extension compiles that same
 core in and installs its hooks through WarcraftXL's chained hook registry, so it
 coexists with other extensions that hook the same engine functions.
