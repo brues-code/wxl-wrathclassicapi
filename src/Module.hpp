@@ -10,6 +10,14 @@
 
 #include "wxl/PluginApi.h"
 
+// The single version input: the WrathClassicAPI release this extension ships.
+// The build sets it from -DWRATHCLASSICAPI_TAG=vX.Y.Z via the core's
+// cmake/WrathClassicAPICore.cmake (as major*10000 + minor*100 + patch). The
+// fallback keeps a plain dev build (no tag) compiling.
+#ifndef WRATHCLASSICAPI_VERSION_VALUE
+#define WRATHCLASSICAPI_VERSION_VALUE 1
+#endif
+
 namespace wxlwca
 {
     // Name the core logs this module under, and the folder it is deployed into
@@ -17,10 +25,11 @@ namespace wxlwca
     // the entry/id in wxl.json.
     inline constexpr const char* kModuleName = "wxl-wrathclassicapi";
 
-    // This module's own version, opaque to the core and only ever shown in a log
-    // line. Encoded as major * 10000 + minor * 100 + patch so releases stay
-    // distinguishable and ordered.
-    inline constexpr uint32_t kModuleVersion = 10000;
+    // The version reported to WarcraftXL (WXL_PluginInfo.pluginVersion, shown in
+    // log lines). Tracks the WrathClassicAPI core version this extension ships,
+    // so this number, the compiled WRATH_CLASSIC_API_VERSION global, and
+    // wxl.json's version all move together from the one release tag.
+    inline constexpr uint32_t kModuleVersion = WRATHCLASSICAPI_VERSION_VALUE;
 
     // Records the service table for the process lifetime. Called once, first
     // thing in WXL_Load; everything below is undefined before it.
