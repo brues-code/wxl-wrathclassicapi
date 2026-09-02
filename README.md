@@ -3,8 +3,8 @@
 A [WarcraftXL](https://warcraftxl.github.io/) extension that adds the WrathClassicAPI Lua
 functions to the World of Warcraft 3.3.5a (build 12340) client. Addons call the
 new globals and `C_*` namespaces directly — no companion addon required. The
-per-function reference is in the core's
-[docs/API.md](https://github.com/brues-code/WrathClassicAPI/blob/main/docs/API.md).
+per-function reference is in [docs/API.md](docs/API.md) — a copy of the core's
+reference, refreshed at every release so it matches the shipped build.
 
 This repository is a thin front-end. The API implementations, client offsets and
 Lua glue live in the shared [WrathClassicAPI](https://github.com/brues-code/WrathClassicAPI) core, which also

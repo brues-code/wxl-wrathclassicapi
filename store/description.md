@@ -17,4 +17,4 @@ Highlights
 More detail
 -----------
 
-Full per-function reference — every global and `C_*` call, with signatures and examples: [docs/API.md](https://github.com/brues-code/WrathClassicAPI/blob/main/docs/API.md).
+Full per-function reference — every global and `C_*` call, with signatures and examples: [docs/API.md](https://github.com/brues-code/wxl-wrathclassicapi/blob/main/docs/API.md).
