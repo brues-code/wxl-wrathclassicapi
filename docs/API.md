@@ -1,9 +1,9 @@
-<!-- Synced from https://github.com/brues-code/WrathClassicAPI/blob/main/docs/API.md by the WrathClassicAPI release workflow. Edit it there, not here. -->
+<!-- Synced from https://github.com/brues-code/WrathClassicAPI/blob/v1.5.0/docs/API.md by the WrathClassicAPI release workflow. Edit it there, not here. -->
 
 # WrathClassicAPI — Lua Reference
 
 Per-function reference for the Lua surface WrathClassicAPI adds to the
-3.3.5a Lua environment. See the [project README](https://github.com/brues-code/WrathClassicAPI/blob/main/README.md) for
+3.3.5a Lua environment. See the [project README](https://github.com/brues-code/WrathClassicAPI/blob/v1.5.0/README.md) for
 build / install instructions and a high-level summary; this file
 documents shape, semantics, and edge cases per call.
 
@@ -272,7 +272,7 @@ every active bubble is returned.
 ## Color
 
 `C_ColorUtil` — color-space conversions and text-color-code helpers. The
-`ColorMixin` from [`CreateColor`](https://github.com/brues-code/WrathClassicAPI/blob/main/AddOns/!!!WrathClassicAPI/Util/Color.lua) uses
+`ColorMixin` from [`CreateColor`](https://github.com/brues-code/WrathClassicAPI/blob/v1.5.0/AddOns/!!!WrathClassicAPI/Util/Color.lua) uses
 these for its `:GenerateHexColor`, `:GetHSL`, and `:WrapTextInColorCode` methods.
 
 Conventions: hue is in **degrees** `[0, 360)`; saturation / value / lightness are
@@ -1955,7 +1955,7 @@ snapshot:
 ~190 named colors. Modern Blizzard's `Blizzard_SharedXMLBase/Color.lua`
 loops the same shape to build `_G[baseTag]` globals (e.g.
 `_G.NORMAL_FONT_COLOR`). The companion addon
-[`!!!WrathClassicAPI`](https://github.com/brues-code/WrathClassicAPI/blob/main/AddOns/!!!WrathClassicAPI/Util/Color.lua)
+[`!!!WrathClassicAPI`](https://github.com/brues-code/WrathClassicAPI/blob/v1.5.0/AddOns/!!!WrathClassicAPI/Util/Color.lua)
 does this loop for you so `NORMAL_FONT_COLOR` etc. are populated as
 real `ColorMixin` instances.
 
@@ -2291,7 +2291,7 @@ Lookup logic mirrors modern: returns `_G["DEBUFF_TYPE_<TYPE>_COLOR"]`
 if some addon has already wrapped the entry as a ColorMixin global,
 otherwise falls back to a plain `{r, g, b, a}` table decoded from
 the embedded `GlobalColor.dbc` snapshot
-([`UI::ColorData`](https://github.com/brues-code/WrathClassicAPI/blob/main/src/ui/ColorData.h)). The `Enrage` row is a
+([`UI::ColorData`](https://github.com/brues-code/WrathClassicAPI/blob/v1.5.0/src/ui/ColorData.h)). The `Enrage` row is a
 ClassicAPI extension carried in the same data file — Blizzard
 dropped it from `GlobalColor.dbc` in BC Classic, so we re-add it
 so consumers don't get the `NONE` fallback for enrage debuffs.
@@ -2475,7 +2475,7 @@ Non-supported in this build:
 - Negative `bagID` (keyring, bank) — these correspond to slots
   outside the standard equipment+bag range and use different invMgr
   paths in the engine. Add when an addon actually needs it; deferred
-  per [TODO §3](https://github.com/brues-code/WrathClassicAPI/blob/main/TODO.md).
+  per [TODO §3](https://github.com/brues-code/WrathClassicAPI/blob/v1.5.0/TODO.md).
 - Non-item GUIDs — `C_Item.*` calls type-check the GUID against
   `TYPEMASK_ITEM | TYPEMASK_CONTAINER`, so a unit/player GUID
   passed here returns `nil` (the wrong thing for the call type).
