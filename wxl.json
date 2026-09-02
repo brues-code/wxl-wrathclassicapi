@@ -18,7 +18,7 @@
   "listing": {
     "title": "WrathClassicAPI",
     "description": "store/description.md",
-    "tagline": "Convenience Lua APIs for 3.3.5a: encoding utilities, and spell, unit, item, quest and tooltip helpers.",
+    "tagline": "Modern C_* Lua APIs and retail-style /reload.",
     "categories": ["interface", "gameplay"],
     "accent": "#4a7fc8"
   },
