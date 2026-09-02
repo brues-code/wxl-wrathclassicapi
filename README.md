@@ -43,5 +43,5 @@ Everything an addon calls after entering the world is unaffected.
 
 ## License
 
-GPL-3.0-or-later. The shared WrathClassicAPI core is licensed separately (LGPL-3.0)
-in its own repository.
+GPL-3.0-or-later, same as the shared WrathClassicAPI core (licensed in its own
+repository).
