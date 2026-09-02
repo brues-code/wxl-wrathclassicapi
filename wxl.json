@@ -3,7 +3,7 @@
 
   "extension": {
     "id": "wxl-wrathclassicapi",
-    "version": "1.4.1",
+    "version": "1.4.2",
     "abi": "1.1",
     "entry": "wxl-wrathclassicapi.dll",
 
