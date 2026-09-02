@@ -38,10 +38,11 @@ where WarcraftXL discovers it.
 
 ## Scope
 
-Every in-game API from the core is available. Login-screen-only registrations
-(developer-console commands) are **not** wired in this front-end: WarcraftXL loads
-extensions earlier than the login screen, and no glue-ready signal is hooked yet.
-Everything an addon calls after entering the world is unaffected.
+The full core is available — every in-game API plus the login-screen
+developer-console commands. WXL_Load runs before the login screen, but the core
+arms a `CGlueMgr::Initialize` hook that fires the login-screen registrations once
+glue is ready, so the console commands register here just as they do under the
+LichLoader front-end.
 
 ## License
 

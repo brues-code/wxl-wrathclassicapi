@@ -59,21 +59,18 @@ int __cdecl WXL_Load(const WXL_Api* api)
     // The same install the LichLoader front-end runs, through WXL's hook registry
     // instead of MinHook:
     //   * InstallCoreHooks arms the in-game bootstrap (fires module registration
-    //     once the in-game Lua state is ready) and the reload-teardown hook, and
-    //     performs the closure-pointer gate write;
+    //     once the in-game Lua state is ready), the reload-teardown hook, and the
+    //     glue (CGlueMgr::Initialize) hook that fires login-screen registrations
+    //     — so developer-console commands register here too — and performs the
+    //     closure-pointer gate write;
     //   * RunHookRegistrations arms every feature module's own hook.
     // WXL_Load runs early in engine init — before the file reader and the world —
-    // so all of these detours are armed before the engine reaches them. The gate
-    // write is re-asserted from the in-game bootstrap detour (see the core's
+    // so all of these detours are armed before the engine reaches them (including
+    // the glue hook, which then fires at the first login screen). The gate write
+    // is re-asserted from the in-game bootstrap detour (see the core's
     // Bootstrap.cpp) so it stays correct despite this early-arming.
     bool ok = Game::InstallCoreHooks(host);
     ok = Game::RunHookRegistrations(host) && ok;
-
-    // Login-screen (glue) registrations are intentionally NOT fired here. The
-    // LichLoader front-end fires them from a CGlueMgr::Initialize-timed Load(),
-    // but WXL_Load runs too early and WarcraftXL exposes no glue-ready signal this
-    // build wires. So glue-only APIs (developer-console commands) are a known gap;
-    // every in-game API is unaffected.
 
     if (ok)
         wxlwca::Log(WXL_LOG_INFO, "loaded");
