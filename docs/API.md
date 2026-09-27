@@ -1,9 +1,9 @@
-<!-- Synced from https://github.com/brues-code/WrathClassicAPI/blob/v1.5.1/docs/API.md by the WrathClassicAPI release workflow. Edit it there, not here. -->
+<!-- Synced from https://github.com/brues-code/WrathClassicAPI/blob/v1.6.0/docs/API.md by the WrathClassicAPI release workflow. Edit it there, not here. -->
 
 # WrathClassicAPI — Lua Reference
 
 Per-function reference for the Lua surface WrathClassicAPI adds to the
-3.3.5a Lua environment. See the [project README](https://github.com/brues-code/WrathClassicAPI/blob/v1.5.1/README.md) for
+3.3.5a Lua environment. See the [project README](https://github.com/brues-code/WrathClassicAPI/blob/v1.6.0/README.md) for
 build / install instructions and a high-level summary; this file
 documents shape, semantics, and edge cases per call.
 
@@ -38,6 +38,9 @@ Conventions:
 - [Console](#console)
   - [`ExportInterfaceFiles art|code`](#exportinterfacefiles-artcode)
   - [`ExportDBCFiles`](#exportdbcfiles)
+- [Container](#container)
+  - [`C_Container.SwapItems(srcBag, srcSlot, dstBag, dstSlot)`](#c_containerswapitemssrcbag-srcslot-dstbag-dstslot)
+  - [`C_Container.MoveItem(srcBag, srcSlot, dstBag, dstSlot, count)`](#c_containermoveitemsrcbag-srcslot-dstbag-dstslot-count)
 - [Encoding](#encoding)
   - [`C_EncodingUtil.EncodeHex` / `DecodeHex`](#c_encodingutilencodehex--decodehex)
   - [`C_EncodingUtil.EncodeBase64` / `DecodeBase64`](#c_encodingutilencodebase64--decodebase64)
@@ -128,6 +131,13 @@ Conventions:
 - [Talent](#talent)
   - [`GetTalentSpellID(tabIndex, talentIndex[, isInspect, isPet, groupIndex, rank])`](#gettalentspellidtabindex-talentindex-isinspect-ispet-groupindex-rank)
   - [`GetTalentIDByIndex(tabIndex, talentIndex[, isInspect, isPet, groupIndex])`](#gettalentidbyindextabindex-talentindex-isinspect-ispet-groupindex)
+- [Textures](#textures)
+  - [`Frame:CreateMaskTexture([name[, layer[, inherits]]])`](#framecreatemasktexturename-layer-inherits)
+  - [`Texture:AddMaskTexture(mask)`](#textureaddmasktexturemask)
+  - [`Texture:RemoveMaskTexture([mask])`](#textureremovemasktexturemask)
+  - [`Texture:GetNumMaskTextures()`](#texturegetnummasktextures)
+  - [`Texture:GetMaskTexture(index)`](#texturegetmasktextureindex)
+  - [`Texture:SetMask(path)`](#texturesetmaskpath)
 - [Time](#time)
   - [`GetServerTime()`](#getservertime)
   - [`C_DateAndTime.GetCurrentCalendarTime()`](#c_dateandtimegetcurrentcalendartime)
@@ -144,6 +154,9 @@ Conventions:
   - [`GameTooltip:HasSpell()`](#gametooltiphasspell)
   - [`GameTooltip:HasItem()`](#gametooltiphasitem)
   - [`GameTooltip:HasUnit()`](#gametooltiphasunit)
+  - [`GameTooltip:HasGameObject()`](#gametooltiphasgameobject)
+  - [`GameTooltip:GetGameObject()`](#gametooltipgetgameobject)
+  - [`OnTooltipSetGameObject` script](#ontooltipsetgameobject-script)
 - [UI Color](#ui-color)
   - [`C_UIColor.GetColors()`](#c_uicolorgetcolors)
 - [Unit](#unit)
@@ -159,7 +172,9 @@ Conventions:
   - [`UnitCreatedBySpell(unit)`](#unitcreatedbyspellunit)
 - [Unit Auras](#unit-auras)
   - [`C_UnitAuras.GetAuraDataByIndex(unit, index[, filter])`](#c_unitaurasgetauradatabyindexunit-index-filter)
-  - [`C_UnitAuras.GetBuffDataByIndex(unit, index)` / `GetDebuffDataByIndex(unit, index)`](#c_unitaurasgetbuffdatabyindexunit-index--getdebuffdatabyindexunit-index)
+  - [`C_UnitAuras.GetBuffDataByIndex(unit, index[, filter])` / `GetDebuffDataByIndex(unit, index[, filter])`](#c_unitaurasgetbuffdatabyindexunit-index-filter--getdebuffdatabyindexunit-index-filter)
+  - [`C_UnitAuras.GetAuraSlots(unit[, filter[, maxSlots[, continuationToken]]])`](#c_unitaurasgetauraslotsunit-filter-maxslots-continuationtoken)
+  - [`C_UnitAuras.GetAuraDataBySlot(unit, slot)` / `UnitAuraBySlot(unit, slot)`](#c_unitaurasgetauradatabyslotunit-slot--unitaurabyslotunit-slot)
   - [`C_UnitAuras.GetUnitAuraBySpellID(unit, spellID[, filter])`](#c_unitaurasgetunitaurabyspellidunit-spellid-filter)
   - [`C_UnitAuras.GetPlayerAuraBySpellID(spellID)`](#c_unitaurasgetplayeraurabyspellidspellid)
   - [`C_UnitAuras.GetUnitAuras(unit[, filter])`](#c_unitaurasgetunitaurasunit-filter)
@@ -272,7 +287,7 @@ every active bubble is returned.
 ## Color
 
 `C_ColorUtil` — color-space conversions and text-color-code helpers. The
-`ColorMixin` from [`CreateColor`](https://github.com/brues-code/WrathClassicAPI/blob/v1.5.1/AddOns/!!!WrathClassicAPI/Util/Color.lua) uses
+`ColorMixin` from [`CreateColor`](https://github.com/brues-code/WrathClassicAPI/blob/v1.6.0/AddOns/!!!WrathClassicAPI/Util/Color.lua) uses
 these for its `:GenerateHexColor`, `:GetHSL`, and `:WrapTextInColorCode` methods.
 
 Conventions: hue is in **degrees** `[0, 360)`; saturation / value / lightness are
@@ -389,6 +404,88 @@ Extracts every client DBC table to `DBFilesClient\`. Unions the archive
 `(listfile)` under `DBFilesClient\` with a scan of the client's DBC
 path-getters, deduped case-insensitively — so it captures the authoritative
 set of DBCs the build loads, including ones the listfile doesn't index.
+
+---
+
+## Container
+
+### `C_Container.SwapItems(srcBag, srcSlot, dstBag, dstSlot)`
+
+Swaps the contents of two bag slots in a single call, without involving the
+cursor. The destination may be empty (the item moves there) or occupied (the
+two items trade places).
+
+```lua
+-- Move the item in bag 1 slot 3 to the first backpack slot.
+C_Container.SwapItems(1, 3, 0, 1)
+```
+
+`bagID` matches `GetContainerItemInfo`, and `slot` is 1-based:
+
+| `bagID` | Container |
+|---------|-----------|
+| `-2` | Keyring |
+| `-1` | Bank, main window |
+| `0` | Backpack |
+| `1`–`4` | Equipped bags |
+| `5`–`11` | Bank bags |
+
+Bank-side slots work only while the bank window is open — the client has no
+copy of what's in the bank before you open it, so calls naming a bank slot
+return `false` until then.
+
+Returns `true` once the request is sent, `false` if it couldn't be built —
+an out-of-range bag or slot, a bag you don't have equipped, an empty source
+slot, or the same slot given as both source and destination. A `true` return
+means the request went out, not that it succeeded: the result arrives as
+`BAG_UPDATE`, or as the usual error message if the server refuses.
+
+```lua
+-- Compact a bag by pulling items down into the free slots ahead of them.
+local function Compact(bag)
+    local free = {}
+    for slot = 1, GetContainerNumSlots(bag) do
+        if not GetContainerItemID(bag, slot) then
+            free[#free + 1] = slot
+        elseif #free > 0 then
+            C_Container.SwapItems(bag, slot, bag, table.remove(free, 1))
+            free[#free + 1] = slot
+        end
+    end
+end
+```
+
+Each call is one request, so a loop like that sends several at once and the
+server applies them in order. Nothing is read back between them — decide every
+slot from your own bookkeeping rather than re-reading the bag mid-loop, since
+those reads still show the pre-swap state.
+
+### `C_Container.MoveItem(srcBag, srcSlot, dstBag, dstSlot, count)`
+
+Splits `count` items off the stack in the source slot and places them in the
+destination, in one call, without involving the cursor.
+
+```lua
+-- Move 5 of the stack in bag 2 slot 1 into backpack slot 4.
+C_Container.MoveItem(2, 1, 0, 4, 5)
+```
+
+The destination may be empty (the split lands there) or hold more of the same
+item (the split merges into it, up to its max stack). A destination holding a
+different item, or one without room for all `count`, is refused outright —
+nothing partial happens. Passing the entire source stack as `count` moves the
+whole thing.
+
+Bags and slots follow the same convention as
+[`SwapItems`](#c_containerswapitemssrcbag-srcslot-dstbag-dstslot), including
+the bank and keyring. Returns `true` once the request is sent, `false` if it
+couldn't be built — everything `SwapItems` rejects, plus a `count` below 1 or
+larger than the source stack.
+
+Batching has one extra caveat over `SwapItems`: `count` is checked against the
+source stack as the client currently knows it. Several calls in one frame get
+no server replies in between, so those counts are still pre-batch values while
+your own model has moved on. Drive a batch from your own bookkeeping.
 
 ---
 
@@ -1002,11 +1099,12 @@ after `GET_ITEM_INFO_RECEIVED` returns its data.
 populated inventory slot on the active player. Empty slots and
 invalid tables return `false` without raising.
 
-`DoesItemExistByID` returns `true` iff the cache currently has data
-for the item. `item` accepts any of retail's forms — item ID, item
-GUID string, item link, or item name (of a cached item). Cache-miss
-returns `false` but kicks off the network query so a follow-up call
-lands the value.
+`DoesItemExistByID` returns `true` iff the item exists. Items that
+ship with the client return `true` right away, with no server query.
+`item` accepts any of retail's forms — item ID, item GUID string, item
+link, or item name (of a cached item). For an item the server hasn't
+sent yet it returns `false` and requests the item, so a follow-up call
+after `GET_ITEM_INFO_RECEIVED` lands the value.
 
 ### `C_Item.GetItemQuality(itemLocation)` / `GetItemQualityByID(item)`
 
@@ -1718,6 +1816,72 @@ across patches, unlike `(class, tab, tier, column)` encoding.
 
 ---
 
+## Textures
+
+Masks clip a texture to the shape of another image's alpha channel:
+where the mask is opaque the texture shows, and where it is transparent
+the texture is hidden. Outside the mask's rectangle the texture is
+hidden. These are real methods (`:call`) on every Frame and Texture.
+
+A texture takes up to 7 masks at once, and every mask is applied
+together. Masks follow the mask's position and size every frame, so
+moving, resizing or animating a mask moves the clip with it. Masks do
+not follow `SetRotation`. A masked texture ignores `SetDesaturated`
+while it has masks.
+
+### `Frame:CreateMaskTexture([name[, layer[, inherits]]])`
+
+Creates a mask and returns it. Takes the same arguments as
+`Frame:CreateTexture`. The mask is a hidden Texture: give it an image
+with `:SetTexture(path)`, and position it with `:SetPoint` /
+`:SetAllPoints` / `:SetSize`. It is never drawn itself.
+
+```lua
+local icon = frame:CreateTexture(nil, "ARTWORK")
+icon:SetAllPoints()
+icon:SetTexture("Interface\\Icons\\INV_Misc_QuestionMark")
+
+local mask = frame:CreateMaskTexture()
+mask:SetAllPoints(icon)
+mask:SetTexture("Interface\\Minimap\\UI-Minimap-Background")
+icon:AddMaskTexture(mask)   -- round icon
+```
+
+### `Texture:AddMaskTexture(mask)`
+
+Clips the texture to `mask`. Call it again with other masks to add
+more. Adding a mask the texture already has does nothing. `mask` can
+be any Texture; one from `CreateMaskTexture` is hidden so only its
+shape is used. One mask can clip many textures, including textures on
+other frames.
+
+### `Texture:RemoveMaskTexture([mask])`
+
+Removes `mask` from the texture. With no argument, removes all masks
+added with `AddMaskTexture`.
+
+### `Texture:GetNumMaskTextures()`
+
+Returns the number of masks added with `AddMaskTexture`.
+
+### `Texture:GetMaskTexture(index)`
+
+Returns the `index`-th mask (in the order they were added), or `nil`.
+
+### `Texture:SetMask(path)`
+
+Clips the texture to the image at `path`, stretched over the
+texture's own rectangle. `SetMask(nil)` or `SetMask("")` removes it.
+An image that can't be loaded leaves the current mask unchanged. This
+mask counts toward the 7-mask limit and applies together with any
+`AddMaskTexture` masks.
+
+```lua
+icon:SetMask("Interface\\Minimap\\UI-Minimap-Background")
+```
+
+---
+
 ## Time
 
 3.3.5's stock `GetTime()` returns frame-relative seconds-since-login
@@ -1935,6 +2099,42 @@ Returns `true` iff the tooltip is currently displaying a unit.
 Reads the engine's unit-GUID slot on the tooltip frame and returns
 true if either GUID half is non-zero.
 
+### `GameTooltip:HasGameObject()`
+
+Returns `true` if the tooltip is showing a gameobject (a chest, herb,
+mining node, mailbox, and so on — from the mouseover in the world).
+
+### `GameTooltip:GetGameObject()`
+
+Returns `name, id, guid` for the gameobject that the tooltip shows:
+
+- `name` — the gameobject's name, or `""` if the client has not yet
+  received its data.
+- `id` — the gameobject's entry (template) ID.
+- `guid` — the GUID string, in the same `"0x…"` form as `UnitGUID`.
+
+Returns nothing if the tooltip does not show a gameobject, or if the
+gameobject is no longer in range.
+
+```lua
+local name, id, guid = GameTooltip:GetGameObject()
+```
+
+### `OnTooltipSetGameObject` script
+
+A tooltip script that fires each time a tooltip is filled with a
+gameobject. Use it the same way as `OnTooltipSetUnit` / `OnTooltipSetItem`:
+`SetScript`, `GetScript`, `HookScript` and XML `<Scripts>` all accept it.
+The handler gets `self` (the tooltip).
+
+```lua
+GameTooltip:HookScript("OnTooltipSetGameObject", function(self)
+    local _, id = self:GetGameObject()
+    self:AddLine("Entry ID: " .. id)
+    self:Show()
+end)
+```
+
 ---
 
 ## UI Color
@@ -1955,7 +2155,7 @@ snapshot:
 ~190 named colors. Modern Blizzard's `Blizzard_SharedXMLBase/Color.lua`
 loops the same shape to build `_G[baseTag]` globals (e.g.
 `_G.NORMAL_FONT_COLOR`). The companion addon
-[`!!!WrathClassicAPI`](https://github.com/brues-code/WrathClassicAPI/blob/v1.5.1/AddOns/!!!WrathClassicAPI/Util/Color.lua)
+[`!!!WrathClassicAPI`](https://github.com/brues-code/WrathClassicAPI/blob/v1.6.0/AddOns/!!!WrathClassicAPI/Util/Color.lua)
 does this loop for you so `NORMAL_FONT_COLOR` etc. are populated as
 real `ColorMixin` instances.
 
@@ -2199,6 +2399,24 @@ accepted but no-ops — they'd need source-side caster classification
 we don't surface or modern-only systems (nameplate-only auras)
 that don't exist in 3.3.5.
 
+Every getter that takes a `filter` also skips **hidden auras** by
+default: secondary-skill tracking (Find Herbs, Track Humanoids, ...)
+and stance/shapeshift-form auras (Defensive Stance, Battle Stance,
+...) are real entries in the unit's aura array, but the client's own
+buff frame never shows an icon for them — `UnitBuff`/`UnitDebuff`
+exclude them the same way. Add `"HIDDEN"` to the filter string to see
+them too:
+
+```lua
+-- Include tracking / stance auras in the results.
+local d = C_UnitAuras.GetAuraDataByIndex("player", 1, "HELPFUL|HIDDEN")
+```
+
+A by-spellID lookup ([`GetUnitAuraBySpellID`](#c_unitaurasgetunitaurabyspellidunit-spellid-filter),
+[`GetPlayerAuraBySpellID`](#c_unitaurasgetplayeraurabyspellidspellid))
+always finds a hidden aura too — naming the exact spell already says
+you want it, `HIDDEN` isn't needed there.
+
 ### `C_UnitAuras.GetAuraDataByIndex(unit, index[, filter])`
 
 Returns the `index`-th aura on `unit` matching `filter` as an
@@ -2222,12 +2440,89 @@ returned here matches the (n)th of the corresponding 3.3.5
 Returns `nil` for unresolvable unit tokens, indices `< 1`, or
 indices past the populated-aura count.
 
-### `C_UnitAuras.GetBuffDataByIndex(unit, index)` / `GetDebuffDataByIndex(unit, index)`
+### `C_UnitAuras.GetBuffDataByIndex(unit, index[, filter])` / `GetDebuffDataByIndex(unit, index[, filter])`
 
-Filter-locked variants. Equivalent to
+Range-locked variants. Equivalent to
 `GetAuraDataByIndex(unit, index, "HELPFUL")` and
-`GetAuraDataByIndex(unit, index, "HARMFUL")` respectively. Saves
-the third arg when you know which polarity you want.
+`GetAuraDataByIndex(unit, index, "HARMFUL")` respectively, plus
+whatever's in `filter` — in practice that just means `"HIDDEN"`,
+since the range is already fixed.
+
+### `C_UnitAuras.GetAuraSlots(unit[, filter[, maxSlots[, continuationToken]]])`
+
+Returns a continuation token followed by the slot ids of the auras on
+`unit` matching `filter`. A slot id is a number naming one aura — pass
+it to [`GetAuraDataBySlot` or
+`UnitAuraBySlot`](#c_unitaurasgetauradatabyslotunit-slot--unitaurabyslotunit-slot)
+to read that aura.
+
+```lua
+local token, slot1, slot2 = C_UnitAuras.GetAuraSlots("target", "HARMFUL", 2)
+```
+
+Ids come in the same order the by-index getters visit the auras.
+`maxSlots` caps how many ids one call returns; `nil` or `0` returns all
+of them. When auras remain past the batch, the first return is a token —
+pass it back as `continuationToken` to get the next batch. On the batch
+that reaches the last aura, the first return is `nil`.
+
+```lua
+-- Every helpful aura on the player, 8 per batch.
+local function handle(unit, token, ...)
+    for i = 1, select("#", ...) do
+        print(C_UnitAuras.UnitAuraBySlot(unit, (select(i, ...))))
+    end
+    return token
+end
+
+local token
+repeat
+    token = handle("player", C_UnitAuras.GetAuraSlots("player", "HELPFUL", 8, token))
+until not token
+```
+
+Prefer this over a loop of `GetAuraDataByIndex`: the by-index getters
+walk the unit's aura array from the start on every call, so such a loop
+re-walks it once per index. One `GetAuraSlots` call plus a by-slot fetch
+per aura walks it once.
+
+`filter` takes the same tokens as `GetAuraDataByIndex` — the range is
+helpful unless the string contains `"HARMFUL"`. A slot id stays valid
+until the unit's auras change; re-enumerate on `UNIT_AURA` rather than
+storing ids. Unresolvable unit tokens return a lone `nil` (no ids).
+
+### `C_UnitAuras.GetAuraDataBySlot(unit, slot)` / `UnitAuraBySlot(unit, slot)`
+
+`GetAuraDataBySlot` returns the [`AuraData`](#auradata-table-shape)
+table for the aura that `slot` names on `unit`, or `nil` when that slot
+no longer holds an aura. Get slot ids from
+[`GetAuraSlots`](#c_unitaurasgetauraslotsunit-filter-maxslots-continuationtoken).
+
+```lua
+local token, slot = C_UnitAuras.GetAuraSlots("player", "HELPFUL", 1)
+if slot then
+    local d = C_UnitAuras.GetAuraDataBySlot("player", slot)
+    print(d.name, d.applications, d.expirationTime - GetTime())
+end
+```
+
+`UnitAuraBySlot` returns the same aura as 15 positional values instead
+of a table, so a per-frame scan allocates nothing:
+
+```lua
+local name, icon, count, dispelType, duration, expirationTime, sourceUnit,
+      isStealable, nameplateShowPersonal, spellId, canApplyAura, isBossDebuff,
+      castByPlayer, nameplateShowAll, timeMod =
+    C_UnitAuras.UnitAuraBySlot("player", slot)
+```
+
+The values are the `AuraData` fields under their positional names:
+`count` is `applications`, `dispelType` is `dispelName`, `sourceUnit`
+and `castByPlayer` are `sourceUnit` and `isFromPlayerOrPlayerPet`.
+`nameplateShowPersonal`, `canApplyAura`, `isBossDebuff`, and
+`nameplateShowAll` are always `false`, and `timeMod` is always `1`
+(see [shape-parity defaults](#auradata-table-shape)). A slot holding no
+aura returns a single `nil`.
 
 ### `C_UnitAuras.GetUnitAuraBySpellID(unit, spellID[, filter])`
 
@@ -2262,7 +2557,8 @@ Bulk fetch. Returns an array (1-indexed) of every populated
 [`AuraData`](#auradata-table-shape) on `unit`. With `filter`,
 restricts to one polarity (`"HELPFUL"` or `"HARMFUL"`); without,
 returns helpful + harmful interleaved in the engine's storage
-order.
+order. Like the other getters, hidden auras (tracking, stance) are
+excluded unless `filter` contains `"HIDDEN"`.
 
 ```lua
 for _, aura in ipairs(C_UnitAuras.GetUnitAuras("player")) do
@@ -2291,7 +2587,7 @@ Lookup logic mirrors modern: returns `_G["DEBUFF_TYPE_<TYPE>_COLOR"]`
 if some addon has already wrapped the entry as a ColorMixin global,
 otherwise falls back to a plain `{r, g, b, a}` table decoded from
 the embedded `GlobalColor.dbc` snapshot
-([`UI::ColorData`](https://github.com/brues-code/WrathClassicAPI/blob/v1.5.1/src/ui/ColorData.h)). The `Enrage` row is a
+([`UI::ColorData`](https://github.com/brues-code/WrathClassicAPI/blob/v1.6.0/src/ui/ColorData.h)). The `Enrage` row is a
 ClassicAPI extension carried in the same data file — Blizzard
 dropped it from `GlobalColor.dbc` in BC Classic, so we re-add it
 so consumers don't get the `NONE` fallback for enrage debuffs.
@@ -2475,7 +2771,7 @@ Non-supported in this build:
 - Negative `bagID` (keyring, bank) — these correspond to slots
   outside the standard equipment+bag range and use different invMgr
   paths in the engine. Add when an addon actually needs it; deferred
-  per [TODO §3](https://github.com/brues-code/WrathClassicAPI/blob/v1.5.1/TODO.md).
+  per [TODO §3](https://github.com/brues-code/WrathClassicAPI/blob/v1.6.0/TODO.md).
 - Non-item GUIDs — `C_Item.*` calls type-check the GUID against
   `TYPEMASK_ITEM | TYPEMASK_CONTAINER`, so a unit/player GUID
   passed here returns `nil` (the wrong thing for the call type).
