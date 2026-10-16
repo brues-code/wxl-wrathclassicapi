@@ -1,9 +1,9 @@
-<!-- Synced from https://github.com/brues-code/WrathClassicAPI/blob/v1.6.0/docs/API.md by the WrathClassicAPI release workflow. Edit it there, not here. -->
+<!-- Synced from https://github.com/brues-code/WrathClassicAPI/blob/v1.7.0/docs/API.md by the WrathClassicAPI release workflow. Edit it there, not here. -->
 
 # WrathClassicAPI — Lua Reference
 
 Per-function reference for the Lua surface WrathClassicAPI adds to the
-3.3.5a Lua environment. See the [project README](https://github.com/brues-code/WrathClassicAPI/blob/v1.6.0/README.md) for
+3.3.5a Lua environment. See the [project README](https://github.com/brues-code/WrathClassicAPI/blob/v1.7.0/README.md) for
 build / install instructions and a high-level summary; this file
 documents shape, semantics, and edge cases per call.
 
@@ -41,6 +41,14 @@ Conventions:
 - [Container](#container)
   - [`C_Container.SwapItems(srcBag, srcSlot, dstBag, dstSlot)`](#c_containerswapitemssrcbag-srcslot-dstbag-dstslot)
   - [`C_Container.MoveItem(srcBag, srcSlot, dstBag, dstSlot, count)`](#c_containermoveitemsrcbag-srcslot-dstbag-dstslot-count)
+- [CVar](#cvar)
+  - [`C_CVar.GetCVar(name)` / `C_CVar.SetCVar(name, value [, scriptCVar])` / `C_CVar.GetCVarDefault(name)` / `C_CVar.RegisterCVar(name [, value])`](#c_cvargetcvarname--c_cvarsetcvarname-value--scriptcvar--c_cvargetcvardefaultname--c_cvarregistercvarname--value)
+  - [`C_CVar.GetCVarBool(name)`](#c_cvargetcvarboolname)
+  - [`C_CVar.GetCVarInfo(name)`](#c_cvargetcvarinfoname)
+  - [`C_CVar.DoesCVarExist(name)`](#c_cvardoescvarexistname)
+  - [`C_CVar.AreCVarsLoaded()`](#c_cvararecvarsloaded)
+  - [`C_CVar.GetCVarBitfield(name, index)` / `C_CVar.SetCVarBitfield(name, index, value)`](#c_cvargetcvarbitfieldname-index--c_cvarsetcvarbitfieldname-index-value)
+  - [`C_CVar.SetTempCVar(name, value)` / `C_CVar.RemoveTempCVar(name)`](#c_cvarsettempcvarname-value--c_cvarremovetempcvarname)
 - [Encoding](#encoding)
   - [`C_EncodingUtil.EncodeHex` / `DecodeHex`](#c_encodingutilencodehex--decodehex)
   - [`C_EncodingUtil.EncodeBase64` / `DecodeBase64`](#c_encodingutilencodebase64--decodebase64)
@@ -56,6 +64,13 @@ Conventions:
   - [`QUEST_REMOVED` event](#quest_removed-event)
   - [`BAG_UPDATE_DELAYED` event](#bag_update_delayed-event)
   - [`FACTION_STANDING_CHANGED` event](#faction_standing_changed-event)
+  - [`PLAYER_SWING` event](#player_swing-event)
+  - [`PLAYER_SWING_RANGE_UPDATE` event](#player_swing_range_update-event)
+  - [`SOUNDKIT_FINISHED` event](#soundkit_finished-event)
+  - [`PLAYER_ENTERING_WORLD` payload](#player_entering_world-payload)
+  - [`CURSOR_CHANGED` event](#cursor_changed-event)
+  - [`WEAPON_SLOT_CHANGED` event](#weapon_slot_changed-event)
+  - [`HEARTHSTONE_BOUND` event](#hearthstone_bound-event)
 - [Expansion](#expansion)
   - [`GetClassicExpansionLevel()`](#getclassicexpansionlevel)
   - [`ClassicExpansionAtLeast(level)`](#classicexpansionatleastlevel)
@@ -78,6 +93,9 @@ Conventions:
   - [`C_GossipInfo.SelectOptionByIndex(orderIndex)`](#c_gossipinfoselectoptionbyindexorderindex)
   - [`C_GossipInfo.SelectAvailableQuest(questID)` / `SelectActiveQuest(questID)`](#c_gossipinfoselectavailablequestquestid--selectactivequestquestid)
   - [`C_GossipInfo.CloseGossip()`](#c_gossipinfoclosegossip)
+- [Group](#group)
+  - [`IsInGroup([groupType])`](#isingroupgrouptype)
+  - [`IsInRaid([groupType])`](#isinraidgrouptype)
 - [Item](#item)
   - [`C_Item.GetItemID(itemLocation)` / `GetItemGUID`](#c_itemgetitemiditemlocation)
   - [`C_Item.GetItemLocation(itemGUID)`](#c_itemgetitemlocationitemguid)
@@ -102,6 +120,7 @@ Conventions:
   - [`CreateAndInitFromMixin(mixin, ...)`](#createandinitfrommixinmixin-)
 - [Player Info](#player-info)
   - [`C_PlayerInfo.CanUseItem(item)`](#c_playerinfocanuseitemitem)
+  - [`GetSheathState()`](#getsheathstate)
 - [Quest Log](#quest-log)
   - [`C_QuestLog.GetQuestIDForLogIndex(questLogIndex)`](#c_questloggetquestidforlogindexquestlogindex)
   - [`C_QuestLog.ReadyForTurnIn(questID)`](#c_questlogreadyforturninquestid)
@@ -116,6 +135,16 @@ Conventions:
   - [`C_Reputation.GetLastStandingChange()`](#c_reputationgetlaststandingchange)
   - [`FACTION_STANDING_CHANGED` event](#faction_standing_changed-event)
   - [`FactionData` table shape](#factiondata-table-shape)
+- [Sound](#sound)
+  - [`PlaySound(soundKitID [, channel, forceNoDuplicates, runFinishCallback])`](#playsoundsoundkitid-channel-forcenoduplicates-runfinishcallback)
+  - [`C_Sound.PlaySound(soundKitID [, channel, forceNoDuplicates, runFinishCallback])`](#c_soundplaysoundsoundkitid-channel-forcenoduplicates-runfinishcallback)
+  - [`C_Sound.PlaySoundWithOptions(params)`](#c_soundplaysoundwithoptionsparams)
+  - [`C_Sound.IsPlaying(soundHandle)`](#c_soundisplayingsoundhandle)
+  - [`C_Sound.GetSoundScaledVolume(soundHandle)`](#c_soundgetsoundscaledvolumesoundhandle)
+  - [`C_Sound.PlayItemSound(soundType, item)`](#c_soundplayitemsoundsoundtype-item)
+  - [`C_Sound.PlayVocalErrorSound(vocalErrorSoundID)`](#c_soundplayvocalerrorsoundvocalerrorsoundid)
+  - [`MuteSoundFile(file)` / `UnmuteSoundFile(file)`](#mutesoundfilefile--unmutesoundfilefile)
+  - [`C_Sound.GetRecentSoundFiles()`](#c_soundgetrecentsoundfiles)
 - [Spell](#spell)
   - [`IsPlayerSpell(spellID)`](#isplayerspellspellid)
   - [`C_Spell.GetSpellInfo(spellIdentifier)`](#c_spellgetspellinfospellidentifier)
@@ -128,6 +157,10 @@ Conventions:
   - [`C_Spell.IsSpellHarmful` / `IsSpellHelpful`](#c_spellisspellharmfulspellidentifier--isspellhelpfulspellidentifier)
   - [`C_Spell.IsSelfBuff(spellIdentifier)`](#c_spellisselfbuffspellidentifier)
   - [`CanDualWield()`](#candualwield)
+- [Swing Timer](#swing-timer)
+  - [`C_SwingTimer.EnableRangeCheck(swingType, enable)`](#c_swingtimerenablerangecheckswingtype-enable)
+  - [`C_SwingTimer.IsTargetWithinSwingRange(swingType)`](#c_swingtimeristargetwithinswingrangeswingtype)
+  - [`Enum.PlayerSwingType`](#enumplayerswingtype)
 - [Talent](#talent)
   - [`GetTalentSpellID(tabIndex, talentIndex[, isInspect, isPet, groupIndex, rank])`](#gettalentspellidtabindex-talentindex-isinspect-ispet-groupindex-rank)
   - [`GetTalentIDByIndex(tabIndex, talentIndex[, isInspect, isPet, groupIndex])`](#gettalentidbyindextabindex-talentindex-isinspect-ispet-groupindex)
@@ -186,6 +219,7 @@ Conventions:
   - [`C_XMLUtil.GetTemplates()`](#c_xmlutilgettemplates)
 - [Globals](#globals)
   - [`LE_EXPANSION_*`](#le_expansion_)
+  - [`LE_PARTY_CATEGORY_*`](#le_party_category_)
 - [Behavioral extensions](#behavioral-extensions)
   - [`GetItemInfo` — auto cache warmup](#getiteminfo--auto-cache-warmup)
   - [`GameTooltip:SetSpellByID` — works for unknown spells](#gametooltipsetspellbyid--works-for-unknown-spells)
@@ -287,7 +321,7 @@ every active bubble is returned.
 ## Color
 
 `C_ColorUtil` — color-space conversions and text-color-code helpers. The
-`ColorMixin` from [`CreateColor`](https://github.com/brues-code/WrathClassicAPI/blob/v1.6.0/AddOns/!!!WrathClassicAPI/Util/Color.lua) uses
+`ColorMixin` from [`CreateColor`](https://github.com/brues-code/WrathClassicAPI/blob/v1.7.0/AddOns/!!!WrathClassicAPI/Util/Color.lua) uses
 these for its `:GenerateHexColor`, `:GetHSL`, and `:WrapTextInColorCode` methods.
 
 Conventions: hue is in **degrees** `[0, 360)`; saturation / value / lightness are
@@ -486,6 +520,134 @@ Batching has one extra caveat over `SwapItems`: `count` is checked against the
 source stack as the client currently knows it. Several calls in one frame get
 no server replies in between, so those counts are still pre-batch values while
 your own model has moved on. Drive a batch from your own bookkeeping.
+
+---
+
+## CVar
+
+Every `C_CVar` function is available on the login and character screens as
+well as in the world, except `RegisterCVar`, which is in the world only.
+
+### `C_CVar.GetCVar(name)` / `C_CVar.SetCVar(name, value [, scriptCVar])` / `C_CVar.GetCVarDefault(name)` / `C_CVar.RegisterCVar(name [, value])`
+
+The same as the global `GetCVar`, `SetCVar`, `GetCVarDefault` and
+`RegisterCVar`, under the modern namespace.
+
+```lua
+C_CVar.SetCVar("cameraDistanceMax", "25")
+C_CVar.GetCVar("cameraDistanceMax")   -- "25"
+```
+
+### `C_CVar.GetCVarBool(name)`
+
+Returns the cvar's value as `true` or `false`, or `nil` when no cvar has
+that name. The global `GetCVarBool` returns `1` or `nil`, so it can't tell
+"off" from "no such cvar".
+
+```lua
+C_CVar.GetCVarBool("autoLootDefault")   -- true or false
+C_CVar.GetCVarBool("doesNotExist")      -- nil
+```
+
+`"1"` and other non-zero numbers count as `true`, as does `"true"` in any
+case. `"0"`, an empty value and other text count as `false`.
+
+### `C_CVar.GetCVarInfo(name)`
+
+Returns a cvar's value, its default, and what may be done to it:
+
+```lua
+local value, defaultValue, isStoredServerAccount, isStoredServerCharacter,
+      isLockedFromUser, isSecure, isReadOnly = C_CVar.GetCVarInfo("cameraDistanceMax")
+```
+
+| Return | Meaning |
+|---|---|
+| `value` | The current value. |
+| `defaultValue` | The value it started with. |
+| `isStoredServerAccount` | `true` when the server stores it for your account. |
+| `isStoredServerCharacter` | `true` when the server stores it for this character. |
+| `isLockedFromUser` | Always `false`: no cvar is locked. |
+| `isSecure` | `true` when `SetCVar` can change it only while protected actions are allowed. |
+| `isReadOnly` | `true` when `SetCVar` refuses to change it. |
+
+Returns `nil` for a name that isn't a cvar. A console command isn't a cvar,
+so its name returns `nil` too.
+
+### `C_CVar.DoesCVarExist(name)`
+
+Returns whether `GetCVar` and `SetCVar` can see a cvar by that name. A
+WrathClassicAPI extension.
+
+```lua
+C_CVar.DoesCVarExist("cameraDistanceMax")   -- true
+C_CVar.DoesCVarExist("doesNotExist")        -- false
+```
+
+It's true exactly when `C_CVar.GetCVarInfo(name)` isn't `nil`, and `false`
+for anything that isn't a string.
+
+### `C_CVar.AreCVarsLoaded()`
+
+Returns whether the game has loaded its settings. Always `true` by the time
+any addon runs, because settings load when the game starts. It's here so
+ported code that checks it keeps working.
+
+### `C_CVar.GetCVarBitfield(name, index)` / `C_CVar.SetCVarBitfield(name, index, value)`
+
+Read or write one bit of a cvar, so one cvar can hold many separate on/off
+settings. The index counts from 1.
+
+```lua
+RegisterCVar("myAddonSeen", "")
+
+C_CVar.SetCVarBitfield("myAddonSeen", 3, true)
+C_CVar.GetCVarBitfield("myAddonSeen", 3)   -- true
+C_CVar.GetCVarBitfield("myAddonSeen", 4)   -- false
+```
+
+The bits use the same format as the game's own Dungeon Finder settings, so
+`C_CVar.GetCVarBitfield("lfdSelectedDungeons", dungeonID)` tells you
+whether a dungeon is ticked in the Dungeon Finder. Store your own bits in a
+cvar you register for them. The value is no longer a readable number.
+
+The index may be 1 to 1523. `GetCVarBitfield` returns `nil` outside that
+range, or for a name that isn't a cvar, so "no such bit" stays apart from
+"the bit is off".
+
+`SetCVarBitfield` returns whether it worked. It returns `false` for an
+index out of range, a name that isn't a cvar, and a cvar `SetCVar` would
+refuse to change. A write is saved the same way `SetCVar` saves, and
+setting one bit leaves the others alone.
+
+### `C_CVar.SetTempCVar(name, value)` / `C_CVar.RemoveTempCVar(name)`
+
+`SetTempCVar` changes a cvar for this session only. The game uses the new
+value at once but never saves it. `RemoveTempCVar` puts back the value the
+cvar had before the first `SetTempCVar`. Neither returns anything.
+
+```lua
+-- The saved value of cameraDistanceMax is "15".
+C_CVar.SetTempCVar("cameraDistanceMax", "40")
+GetCVar("cameraDistanceMax")      -- "40"
+-- After /reload or logout, the saved value is still "15".
+C_CVar.RemoveTempCVar("cameraDistanceMax")
+GetCVar("cameraDistanceMax")      -- "15"
+```
+
+Use this pair for a mode that changes several cvars and later turns off,
+without touching the user's saved settings.
+
+- Calling `SetTempCVar` twice on one cvar: `RemoveTempCVar` puts back the
+  value from before the first call.
+- `SetCVar` on a cvar with a temp value replaces it. The game saves the new
+  value, and `RemoveTempCVar` then leaves the cvar alone.
+- A `nil` value sets an empty string.
+- `RemoveTempCVar` does nothing for a cvar without a temp value.
+
+Both raise the same errors as `SetCVar`: for a name that isn't a cvar, and
+for a read-only cvar. A cvar that only takes effect after a restart can't be
+set for the session, so both raise an error for one of those too.
 
 ---
 
@@ -701,6 +863,221 @@ Does not fire for the initial faction sync at login — only for actual, visible
 standing changes. `repGained` is a WrathClassicAPI extra: the modern event
 delivers only `(factionID, newStanding)`, but the delta is on hand, so it's
 passed through to save addons re-deriving it from the chat string.
+
+### `PLAYER_SWING` event
+
+Payload: `swingDuration, swingType`
+
+Fires each time one of your attack timers resets.
+
+- **`swingDuration`** (number) — seconds from now until the next attack
+  of this type.
+- **`swingType`** — an [`Enum.PlayerSwingType`](#enumplayerswingtype)
+  value: which timer reset.
+
+```lua
+local f = CreateFrame("Frame")
+f:RegisterEvent("PLAYER_SWING")
+f:SetScript("OnEvent", function(self, event, swingDuration, swingType)
+    if swingType == Enum.PlayerSwingType.MainHand then
+        MainHandBar_Start(swingDuration)
+    end
+end)
+```
+
+These change a timer:
+
+- A main-hand or off-hand attack lands or misses: that hand and the
+  ranged timer reset. The other hand is held back to at least 0.2
+  seconds, so the two never land together.
+- An on-next-swing ability (Heroic Strike, Cleave, Maul, Raptor Strike)
+  goes off: the same as a main-hand attack, which it replaces.
+- Auto Shot or a wand's Shoot fires: every timer resets.
+- You finish casting a spell that interrupts auto-attacks: every timer
+  resets. An instant cast of a spell that normally has a cast time,
+  such as a Pyroblast after Presence of Mind or an Exorcism after Art
+  of War, does not reset them.
+- You cast a spell that leaves auto-attacks alone, such as Slam: the
+  melee timers stop while you cast, and continue when the cast ends or
+  is cancelled.
+- You start attacking a target in melee range while your off hand is
+  ready: the off hand waits until half a main-hand swing after the next
+  main-hand attack.
+
+Several attacks can land at the same moment, such as an extra attack
+from Windfury. The event still fires once per timer, not once per
+attack. When you parry, the server speeds up your next attack, so
+`swingDuration` can be shorter than your weapon speed.
+
+The off-hand timer only reports while you dual wield, and the ranged
+timer only while a bow, gun, crossbow, thrown weapon or wand is
+equipped. An attack you start out of melee range does not fire the
+event until a swing can actually land.
+
+### `PLAYER_SWING_RANGE_UPDATE` event
+
+Payload: `swingType, isInRange, checksRange`
+
+Fires when your current target moves into or out of range for a swing
+type that has range checking on. See
+[`C_SwingTimer.EnableRangeCheck`](#c_swingtimerenablerangecheckswingtype-enable).
+
+- **`swingType`** — the [`Enum.PlayerSwingType`](#enumplayerswingtype)
+  value this update is for.
+- **`isInRange`** (boolean) — `true` when the target is in range. Ignore
+  it when `checksRange` is `false`.
+- **`checksRange`** (boolean) — `false` when no range check was
+  possible: there is no current target, the target can't be attacked,
+  or no weapon is equipped for this swing type.
+
+### `SOUNDKIT_FINISHED` event
+
+Payload: `soundHandle`
+
+Fires when a sound played with `runFinishCallback` set to `true` ends.
+`soundHandle` is the handle
+[`PlaySound`](#playsoundsoundkitid-channel-forcenoduplicates-runfinishcallback)
+returned for it.
+
+```lua
+local f = CreateFrame("Frame")
+f:RegisterEvent("SOUNDKIT_FINISHED")
+f:SetScript("OnEvent", function(self, event, soundHandle)
+    print("finished:", soundHandle)
+end)
+
+PlaySound(8959, "SFX", nil, true)
+```
+
+Sounds played without `runFinishCallback` report nothing. The event
+arrives on the first frame after the sound ends.
+
+### `PLAYER_ENTERING_WORLD` payload
+
+Payload: `isInitialLogin, isReloadingUi`
+
+`PLAYER_ENTERING_WORLD` tells you why it fired.
+
+```lua
+local f = CreateFrame("Frame")
+f:RegisterEvent("PLAYER_ENTERING_WORLD")
+f:SetScript("OnEvent", function(self, event, isInitialLogin, isReloadingUi)
+    if isInitialLogin then
+        -- logged in from character select
+    elseif isReloadingUi then
+        -- /reload
+    else
+        -- came out of a loading screen: instance, portal, boat, etc.
+    end
+end)
+```
+
+| Argument | Meaning |
+|---|---|
+| `isInitialLogin` | `true` on a login from character select, including logging out and back in. |
+| `isReloadingUi` | `true` after a `/reload`. |
+
+Both are `false` after any other loading screen, and they are never both
+`true`. Handlers that ignore the arguments work as before.
+
+### `CURSOR_CHANGED` event
+
+Payload: `isDefault, newCursorType, oldCursorType, oldCursorVirtualID`
+
+Fires when what the cursor holds changes, and says what it held before.
+
+```lua
+local f = CreateFrame("Frame")
+f:RegisterEvent("CURSOR_CHANGED")
+f:SetScript("OnEvent", function(self, event, isDefault, newType, oldType, oldID)
+    if newType == Enum.UICursorType.Item then
+        -- an item was just picked up; GetCursorInfo() has the details
+    end
+end)
+```
+
+| Argument | Meaning |
+|---|---|
+| `isDefault` | `true` when the cursor is now empty. |
+| `newCursorType` | What the cursor holds now, as an `Enum.UICursorType` value. |
+| `oldCursorType` | What it held before, as an `Enum.UICursorType` value. |
+| `oldCursorVirtualID` | The previous content's number: an itemID, spellID, macro slot, merchant slot, equipment set ID, or a money amount in copper. `0` when the cursor was empty, and for a pet action or a stabled pet. |
+
+`Enum.UICursorType` holds every value from `Default` (0) to
+`PerksProgramVendorItem` (20). The cursor can hold these:
+
+| Value | Name | What's on the cursor |
+|---|---|---|
+| 0 | `Default` | Nothing |
+| 1 | `Item` | An item from your bags, your equipment, or an action bar |
+| 2 | `Money` | Money from your purse |
+| 3 | `Spell` | A spell, companion or mount |
+| 4 | `PetAction` | A pet action bar button |
+| 5 | `Merchant` | An item from a merchant |
+| 7 | `Macro` | A macro |
+| 8 | `Ammo` | The item in your ammo slot |
+| 9 | `Pet` | A stabled pet |
+| 10 | `GuildBank` | An item from the guild bank |
+| 11 | `GuildBankMoney` | Money from the guild bank |
+| 12 | `EquipmentSet` | An equipment set |
+
+`CURSOR_UPDATE` still fires as before, so nothing that listens to it
+needs changing. Prefer `CURSOR_CHANGED` for new code, because it reports
+every kind of cursor. `CURSOR_UPDATE` describes a new holding only for
+items: picking up money, a spell, a macro, a pet action, a stabled pet or
+an equipment set gives one `CURSOR_UPDATE` that describes an *empty*
+cursor, and nothing once the new content is in place.
+
+`CURSOR_CHANGED` fires once per real change and stays quiet otherwise.
+It arrives on the frame after the change. Picking up one of two
+identical stacks, dropping it and picking up the other reports each
+pickup separately.
+
+### `WEAPON_SLOT_CHANGED` event
+
+Payload: *(none)*
+
+Fires when the item in a weapon slot changes: main hand (16), off hand
+(17) or ranged (18). Equipping, unequipping and swapping all fire it.
+
+```lua
+local f = CreateFrame("Frame")
+f:RegisterEvent("WEAPON_SLOT_CHANGED")
+f:SetScript("OnEvent", function()
+    SwingBars_ReadWeapons()
+end)
+```
+
+Use it instead of `PLAYER_EQUIPMENT_CHANGED` when only the weapons
+matter, such as for a swing timer bar or anything that reads
+`UnitAttackSpeed` and `UnitRangedDamage` again.
+
+Paladins, Shamans, Druids and Death Knights hold a relic (Libram, Totem,
+Idol or Sigil) in slot 18 instead of a ranged weapon. A relic isn't a
+weapon, so changing it doesn't fire the event.
+`UnitHasRelicSlot("player")` tells you which kind of slot 18 you have.
+
+The event fires at most once a frame. One action that changes two weapon
+slots, such as a two-hander replacing a one-hander and an off-hand,
+fires it once.
+
+### `HEARTHSTONE_BOUND` event
+
+Payload: *(none)*
+
+Fires each time you bind your hearthstone, including a rebind at the
+inn you're already bound to. `GetBindLocation()` returns the new
+location by the time the event fires.
+
+```lua
+local f = CreateFrame("Frame")
+f:RegisterEvent("HEARTHSTONE_BOUND")
+f:SetScript("OnEvent", function()
+    print("Hearthstone set to " .. GetBindLocation())
+end)
+```
+
+It doesn't fire at login or when you change maps.
 
 ---
 
@@ -958,6 +1335,45 @@ filtered list.
 Closes the gossip frame and clears the engine's gossip state.
 Same effect as clicking the X / pressing Escape — delegates to
 the engine's `Script_CloseGossip` so the CMSG path is verbatim.
+
+---
+
+## Group
+
+You can belong to two groups at once. Your own group is the **home**
+group. Inside a battleground or an arena you're also in that match's
+group, the **instance** group, and your home group waits for you
+outside. `groupType` picks which one to ask about:
+
+| `groupType` | Asks about |
+|---|---|
+| *(none)* | Either group |
+| `LE_PARTY_CATEGORY_HOME` (1) | Your home group |
+| `LE_PARTY_CATEGORY_INSTANCE` (2) | Your battleground or arena group |
+
+A Dungeon Finder group is a home group.
+
+### `IsInGroup([groupType])`
+
+Returns `true` if you're in a party or a raid.
+
+```lua
+if IsInGroup() then
+    SendChatMessage("ready check", IsInRaid() and "RAID" or "PARTY")
+end
+
+if IsInGroup(LE_PARTY_CATEGORY_INSTANCE) then
+    SendChatMessage("incoming", "BATTLEGROUND")
+end
+```
+
+### `IsInRaid([groupType])`
+
+Returns `true` if you're in a raid. A party returns `false`.
+
+```lua
+local channel = IsInRaid() and "RAID" or "PARTY"
+```
 
 ---
 
@@ -1316,6 +1732,25 @@ Reads the item-stats cache; on a cache miss it returns `false` synchronously
 without firing a load (query the item first with `GetItemInfo` if needed). WotLK
 dropped the old PvP-rank item gates, so those aren't checked.
 
+### `GetSheathState()`
+
+Returns which kind of weapon you have drawn:
+
+| Value | Meaning |
+|---|---|
+| `1` | None: your weapons are put away. |
+| `2` | A melee weapon is drawn. |
+| `3` | A ranged weapon is drawn. |
+
+```lua
+if GetSheathState() == 3 then
+    -- the ranged weapon is out
+end
+```
+
+Returns `1` before you've entered the world. A `ToggleSheath()` shows up
+right away. To change the state, use `ToggleSheath()`.
+
 ---
 
 ## Quest Log
@@ -1548,6 +1983,188 @@ end)
 
 ---
 
+## Sound
+
+Every sound the game plays comes from one table of sound entries. Each
+entry has an id, its **SoundKitID**, and one or more audio files. The
+ids match the modern client's `SOUNDKIT` values, so `8959` is the raid
+warning in both. [`MuteSoundFile`](#mutesoundfilefile--unmutesoundfilefile)
+takes a sound's file path, and
+[`C_Sound.GetRecentSoundFiles`](#c_soundgetrecentsoundfiles) shows the
+path of a sound you just heard. The
+[`SOUNDKIT_FINISHED`](#soundkit_finished-event) event can tell you when
+a sound ends.
+
+### `PlaySound(soundKitID [, channel, forceNoDuplicates, runFinishCallback])`
+
+Plays a sound and returns `willPlay, soundHandle`.
+
+```lua
+local willPlay, handle = PlaySound(8959)
+PlaySound("igMainMenuOpen")             -- a sound entry's name also works
+PlaySound(8959, "Master", nil, true)    -- SOUNDKIT_FINISHED when it ends
+```
+
+An entry with several files plays one of them, picked the way the game
+picks for its own sounds.
+
+`willPlay` is `false`, and `soundHandle` is `nil`, when the sound can't
+start:
+
+- the id or name names no sound
+- sound is turned off in the sound options, or the channel's sounds
+  are (for example, sound effects for `"SFX"`)
+- the same sound is already playing: a sound never plays a second copy
+  over itself
+- its file is muted with `MuteSoundFile`
+
+| Argument | Meaning |
+|---|---|
+| `channel` | Which volume slider applies: `"SFX"` (the default), `"Music"`, `"Ambience"` or `"Master"` (the master volume only). `"Dialog"` and any other value play as `"SFX"`. |
+| `forceNoDuplicates` | Accepted and ignored: a sound never plays over itself. |
+| `runFinishCallback` | Pass `true` to get [`SOUNDKIT_FINISHED`](#soundkit_finished-event) when this sound ends. |
+
+### `C_Sound.PlaySound(soundKitID [, channel, forceNoDuplicates, runFinishCallback])`
+
+The same as [`PlaySound`](#playsoundsoundkitid-channel-forcenoduplicates-runfinishcallback).
+
+### `C_Sound.PlaySoundWithOptions(params)`
+
+Plays a sound with its options in a table, and returns
+`success, soundHandle`. The sound plays on the `"SFX"` channel.
+
+```lua
+local ok, handle = C_Sound.PlaySoundWithOptions({
+    soundKitID = 8959,
+    volumeOverride = 0.4,
+    runFinishCallback = true,
+})
+```
+
+| Field | Meaning |
+|---|---|
+| `soundKitID` | The sound to play. |
+| `volumeOverride` | Scales the sound's volume: `1` leaves it alone, `0` is silent. Leave it out for the sound's own volume. |
+| `runFinishCallback` | Pass `true` to get [`SOUNDKIT_FINISHED`](#soundkit_finished-event) when this sound ends. |
+| `uiSoundSubType` | Accepted and ignored. |
+| `forceNoDuplicates` | Accepted and ignored. |
+| `overridePriority` | Accepted and ignored. |
+
+### `C_Sound.IsPlaying(soundHandle)`
+
+Returns `true` while the sound for a handle is playing.
+
+```lua
+local _, handle = PlaySound(8959)
+C_Sound.IsPlaying(handle)   -- true until the sound ends
+```
+
+A handle names one sound for the whole session, so an old handle never
+reports a different sound.
+
+### `C_Sound.GetSoundScaledVolume(soundHandle)`
+
+Returns the volume a sound is playing at, from `0` to `1`: its own
+volume after `volumeOverride` and your volume settings. Returns `nil`
+once the sound has ended.
+
+```lua
+local _, handle = C_Sound.PlaySoundWithOptions({ soundKitID = 8959, volumeOverride = 0.4 })
+C_Sound.GetSoundScaledVolume(handle)
+```
+
+### `C_Sound.PlayItemSound(soundType, item)`
+
+Plays the noise an item makes when you handle it, without doing the
+action.
+
+```lua
+C_Sound.PlayItemSound(Enum.ItemSoundType.Pickup, { bagID = 0, slotIndex = 1 })
+C_Sound.PlayItemSound(Enum.ItemSoundType.Drop, 19019)
+```
+
+`soundType` is an `Enum.ItemSoundType` value:
+
+| Value | Field |
+|---|---|
+| 0 | `Pickup` |
+| 1 | `Drop` |
+| 2 | `Use` |
+| 3 | `Close` |
+
+`item` is an item location (`{ bagID = B, slotIndex = S }` or
+`{ equipmentSlotIndex = N }`), or any item argument the `C_Item` `ByID`
+functions take: an itemID, an item link, the name of a cached item, or
+an item GUID.
+
+The sound comes from the item's appearance, so items that look alike
+sound alike. With the game's own data only `Pickup` and `Drop` have
+sounds; `Use` and `Close` play nothing unless the realm's data adds
+them. Nothing plays, and nothing is raised, for an item that can't be
+found.
+
+### `C_Sound.PlayVocalErrorSound(vocalErrorSoundID)`
+
+Plays your character's spoken complaint for an error ("my bags are
+full", "I have no ammo") in the voice of their race and sex.
+
+```lua
+C_Sound.PlayVocalErrorSound(Enum.Vocalerrorsounds.Inventoryfull)
+C_Sound.PlayVocalErrorSound(Enum.Vocalerrorsounds.Outofammo)
+```
+
+`Enum.Vocalerrorsounds` holds all 68 values, from `Inventoryfull` (0)
+to `ExhaustedObsolete` (67). Like the game's own error speech, it plays
+nothing while the error speech sound option is off, or while your
+character is already saying one. Some combinations have no recording
+and play nothing.
+
+### `MuteSoundFile(file)` / `UnmuteSoundFile(file)`
+
+Stops a sound file from playing, and lets it play again.
+
+```lua
+MuteSoundFile("Sound\\Interface\\RaidWarning.wav")
+PlaySound(8959)      -- false: silent
+UnmuteSoundFile("Sound\\Interface\\RaidWarning.wav")
+PlaySound(8959)      -- true: plays again
+```
+
+`file` is the path of the audio file. Upper and lower case don't
+matter, and `/` works in place of `\\`. A mute applies to the file, so
+it covers every sound that uses it, whoever plays it.
+
+`MuteSoundFile` returns `true` when the path is now muted.
+`UnmuteSoundFile` returns `true` when the path had been muted.
+
+Mutes last until you log out or reload. To keep them, save your list
+and apply it again on login.
+
+### `C_Sound.GetRecentSoundFiles()`
+
+Returns the files that played most recently, newest first. Use it to
+find the path of a sound you just heard.
+
+```lua
+local recent = C_Sound.GetRecentSoundFiles()
+-- recent[1] = { file = "Sound\\Interface\\RaidWarning.wav",
+--               time = 96036833, muted = false }
+```
+
+| Field | Meaning |
+|---|---|
+| `file` | The path of the audio file. Pass it to `MuteSoundFile`. |
+| `time` | When it played, in milliseconds on `GetTime()`'s clock: `GetTime() * 1000 - time` is how long ago. |
+| `muted` | `true` when the file is muted. |
+
+The list holds the last 64 different files. A file that plays again
+moves to the front instead of taking a second place, so a repeating
+footstep can't push the rest out. Muted files stay in the list, marked
+`muted = true`, so you can still find one to unmute. The list covers
+every sound the game plays, not only the ones you start.
+
+---
+
 ## Spell
 
 ### `IsPlayerSpell(spellID)`
@@ -1756,6 +2373,58 @@ spec switch — turns it off.
 ```lua
 CanDualWield()   -- true on a rogue; false on a mage
 ```
+
+---
+
+## Swing Timer
+
+Your auto-attack timers: when the next main-hand, off-hand and ranged
+attack will come, and whether your current target is in range for
+each. [`Enum.PlayerSwingType`](#enumplayerswingtype) names the swing
+types. The matching events,
+[`PLAYER_SWING`](#player_swing-event) and
+[`PLAYER_SWING_RANGE_UPDATE`](#player_swing_range_update-event), are
+under [Events](#events).
+
+### `C_SwingTimer.EnableRangeCheck(swingType, enable)`
+
+Turns [`PLAYER_SWING_RANGE_UPDATE`](#player_swing_range_update-event)
+on or off for one swing type. Range checking is off for every swing
+type after a `/reload`.
+
+```lua
+C_SwingTimer.EnableRangeCheck(Enum.PlayerSwingType.MainHand, true)
+local inRange = C_SwingTimer.IsTargetWithinSwingRange(Enum.PlayerSwingType.MainHand)
+```
+
+After you enable a swing type, call
+[`C_SwingTimer.IsTargetWithinSwingRange`](#c_swingtimeristargetwithinswingrangeswingtype)
+once to read the current range. The event fires only on a later change.
+
+### `C_SwingTimer.IsTargetWithinSwingRange(swingType)`
+
+Returns whether your current target is in range for a swing type: an
+[`Enum.PlayerSwingType`](#enumplayerswingtype) value.
+
+Melee range is the game's own melee reach, which grows with the size
+of you and your target, and is longer while you and your target are
+both running. Ranged range is the range of your ranged
+attack: Auto Shot for a hunter's bow, gun or crossbow, Shoot for other
+classes' bows, guns and crossbows and for wands, and Throw for thrown
+weapons.
+
+Returns `nil` when no range answer is possible: no current target, a
+target that can't be attacked, or no weapon equipped for that swing
+type. Do not read `nil` as out of range. Auto-attacks only apply to
+your current target, so no other unit can be asked about.
+
+### `Enum.PlayerSwingType`
+
+| Value | Field      | Meaning |
+|------:|------------|---------|
+| `0`   | `MainHand` | The main-hand weapon, or your fists. |
+| `1`   | `OffHand`  | The off-hand weapon, while you dual wield. |
+| `2`   | `Ranged`   | The ranged weapon: a bow, gun, crossbow, thrown weapon or wand. |
 
 ---
 
@@ -2155,7 +2824,7 @@ snapshot:
 ~190 named colors. Modern Blizzard's `Blizzard_SharedXMLBase/Color.lua`
 loops the same shape to build `_G[baseTag]` globals (e.g.
 `_G.NORMAL_FONT_COLOR`). The companion addon
-[`!!!WrathClassicAPI`](https://github.com/brues-code/WrathClassicAPI/blob/v1.6.0/AddOns/!!!WrathClassicAPI/Util/Color.lua)
+[`!!!WrathClassicAPI`](https://github.com/brues-code/WrathClassicAPI/blob/v1.7.0/AddOns/!!!WrathClassicAPI/Util/Color.lua)
 does this loop for you so `NORMAL_FONT_COLOR` etc. are populated as
 real `ColorMixin` instances.
 
@@ -2587,7 +3256,7 @@ Lookup logic mirrors modern: returns `_G["DEBUFF_TYPE_<TYPE>_COLOR"]`
 if some addon has already wrapped the entry as a ColorMixin global,
 otherwise falls back to a plain `{r, g, b, a}` table decoded from
 the embedded `GlobalColor.dbc` snapshot
-([`UI::ColorData`](https://github.com/brues-code/WrathClassicAPI/blob/v1.6.0/src/ui/ColorData.h)). The `Enrage` row is a
+([`UI::ColorData`](https://github.com/brues-code/WrathClassicAPI/blob/v1.7.0/src/ui/ColorData.h)). The `Enrage` row is a
 ClassicAPI extension carried in the same data file — Blizzard
 dropped it from `GlobalColor.dbc` in BC Classic, so we re-add it
 so consumers don't get the `NONE` fallback for enrage debuffs.
@@ -2713,6 +3382,16 @@ Numeric constants for the modern Blizzard expansion enum, matching
 Pair with `GetClassicExpansionLevel` / `ClassicExpansionAt*` for
 expansion-gated code paths.
 
+### `LE_PARTY_CATEGORY_*`
+
+The `groupType` values for [`IsInGroup`](#isingroupgrouptype) and
+[`IsInRaid`](#isinraidgrouptype):
+
+| Constant | Value |
+|----------|-------|
+| `LE_PARTY_CATEGORY_HOME` | 1 |
+| `LE_PARTY_CATEGORY_INSTANCE` | 2 |
+
 ---
 
 ## Behavioral extensions
@@ -2771,7 +3450,7 @@ Non-supported in this build:
 - Negative `bagID` (keyring, bank) — these correspond to slots
   outside the standard equipment+bag range and use different invMgr
   paths in the engine. Add when an addon actually needs it; deferred
-  per [TODO §3](https://github.com/brues-code/WrathClassicAPI/blob/v1.6.0/TODO.md).
+  per [TODO §3](https://github.com/brues-code/WrathClassicAPI/blob/v1.7.0/TODO.md).
 - Non-item GUIDs — `C_Item.*` calls type-check the GUID against
   `TYPEMASK_ITEM | TYPEMASK_CONTAINER`, so a unit/player GUID
   passed here returns `nil` (the wrong thing for the call type).
