@@ -1,9 +1,9 @@
-<!-- Synced from https://github.com/brues-code/WrathClassicAPI/blob/v1.7.0/docs/API.md by the WrathClassicAPI release workflow. Edit it there, not here. -->
+<!-- Synced from https://github.com/brues-code/WrathClassicAPI/blob/v1.8.0/docs/API.md by the WrathClassicAPI release workflow. Edit it there, not here. -->
 
 # WrathClassicAPI — Lua Reference
 
 Per-function reference for the Lua surface WrathClassicAPI adds to the
-3.3.5a Lua environment. See the [project README](https://github.com/brues-code/WrathClassicAPI/blob/v1.7.0/README.md) for
+3.3.5a Lua environment. See the [project README](https://github.com/brues-code/WrathClassicAPI/blob/v1.8.0/README.md) for
 build / install instructions and a high-level summary; this file
 documents shape, semantics, and edge cases per call.
 
@@ -25,6 +25,8 @@ Conventions:
 
 - [AddOns](#addons)
   - [`C_AddOns.GetAddOnLocalTable(addOnName)`](#c_addonsgetaddonlocaltableaddonname)
+  - [`C_AddOns.IsAddOnLoaded(name)`](#c_addonsisaddonloadedname)
+  - [`C_AddOns.GetAddOnOptionalDependencies(name)`](#c_addonsgetaddonoptionaldependenciesname)
 - [Chat Bubbles](#chat-bubbles)
   - [`C_ChatBubbles.GetAllChatBubbles([includeForbidden])`](#c_chatbubblesgetallchatbubblesincludeforbidden)
 - [Color](#color)
@@ -41,6 +43,8 @@ Conventions:
 - [Container](#container)
   - [`C_Container.SwapItems(srcBag, srcSlot, dstBag, dstSlot)`](#c_containerswapitemssrcbag-srcslot-dstbag-dstslot)
   - [`C_Container.MoveItem(srcBag, srcSlot, dstBag, dstSlot, count)`](#c_containermoveitemsrcbag-srcslot-dstbag-dstslot-count)
+  - [`C_Container.GetContainerItemRepairCost(bagID, slot)`](#c_containergetcontaineritemrepaircostbagid-slot)
+  - [`C_Container.CalculateTotalNumberOfFreeBagSlots()`](#c_containercalculatetotalnumberoffreebagslots)
 - [CVar](#cvar)
   - [`C_CVar.GetCVar(name)` / `C_CVar.SetCVar(name, value [, scriptCVar])` / `C_CVar.GetCVarDefault(name)` / `C_CVar.RegisterCVar(name [, value])`](#c_cvargetcvarname--c_cvarsetcvarname-value--scriptcvar--c_cvargetcvardefaultname--c_cvarregistercvarname--value)
   - [`C_CVar.GetCVarBool(name)`](#c_cvargetcvarboolname)
@@ -57,6 +61,8 @@ Conventions:
   - [`C_EncodingUtil.SerializeCBOR` / `DeserializeCBOR`](#c_encodingutilserializecbor--deserializecbor)
 - [Events](#events)
   - [`C_EventUtils.IsEventValid(eventName)`](#c_eventutilsiseventvalideventname)
+  - [`Frame:RegisterUnitEvent(event, unit1 [, unit2, ...])`](#frameregisteruniteventevent-unit1--unit2-)
+  - [`Frame:IsEventRegistered(event)`](#frameiseventregisteredevent)
   - [`GET_ITEM_INFO_RECEIVED` event](#get_item_info_received-event)
   - [`ITEM_DATA_LOAD_RESULT` event](#item_data_load_result-event)
   - [`QUEST_DATA_LOAD_RESULT` event](#quest_data_load_result-event)
@@ -113,6 +119,7 @@ Conventions:
   - [`C_Item.IsLocked(itemLocation)`](#c_itemislockeditemlocation)
   - [`C_Item.IsBound(itemLocation)`](#c_itemisbounditemlocation)
   - [`C_Item.GetItemSpell(item)`](#c_itemgetitemspellitem)
+  - [`GetInventoryItemRepairCost(invSlot)`](#getinventoryitemrepaircostinvslot)
 - [Macro](#macro)
   - [`GetMacroIcons` / `GetMacroItemIcons` / `GetLooseMacroIcons` / `GetLooseMacroItemIcons`](#getmacroicons--getmacroitemicons--getloosemacroicons--getloosemacroitemicons)
 - [Mixins](#mixins)
@@ -121,6 +128,7 @@ Conventions:
 - [Player Info](#player-info)
   - [`C_PlayerInfo.CanUseItem(item)`](#c_playerinfocanuseitemitem)
   - [`GetSheathState()`](#getsheathstate)
+  - [`GetShapeshiftFormID()`](#getshapeshiftformid)
 - [Quest Log](#quest-log)
   - [`C_QuestLog.GetQuestIDForLogIndex(questLogIndex)`](#c_questloggetquestidforlogindexquestlogindex)
   - [`C_QuestLog.ReadyForTurnIn(questID)`](#c_questlogreadyforturninquestid)
@@ -147,6 +155,8 @@ Conventions:
   - [`C_Sound.GetRecentSoundFiles()`](#c_soundgetrecentsoundfiles)
 - [Spell](#spell)
   - [`IsPlayerSpell(spellID)`](#isplayerspellspellid)
+  - [`C_Spell.DoesSpellExist(spellIdentifier)`](#c_spelldoesspellexistspellidentifier)
+  - [`C_Spell.CancelSpellByID(spellID)`](#c_spellcancelspellbyidspellid)
   - [`C_Spell.GetSpellInfo(spellIdentifier)`](#c_spellgetspellinfospellidentifier)
   - [`C_Spell.GetSpellName(spellIdentifier)`](#c_spellgetspellnamespellidentifier)
   - [`C_Spell.GetSpellSubtext(spellIdentifier)`](#c_spellgetspellsubtextspellidentifier)
@@ -203,6 +213,11 @@ Conventions:
   - [`UnitTokenFromGUID(guid)`](#unittokenfromguidguid)
   - [`UnitNameFromGUID(guid)`](#unitnamefromguidguid)
   - [`UnitCreatedBySpell(unit)`](#unitcreatedbyspellunit)
+  - [`UnitSubName(unit)`](#unitsubnameunit)
+  - [`UnitOwnerGUID(unit)`](#unitownerguidunit)
+  - [`UnitCreatureID(unit)`](#unitcreatureidunit)
+  - [`UnitCreatureTypeID(unit)`](#unitcreaturetypeidunit)
+  - [`UnitGUID("player")`](#unitguidplayer)
 - [Unit Auras](#unit-auras)
   - [`C_UnitAuras.GetAuraDataByIndex(unit, index[, filter])`](#c_unitaurasgetauradatabyindexunit-index-filter)
   - [`C_UnitAuras.GetBuffDataByIndex(unit, index[, filter])` / `GetDebuffDataByIndex(unit, index[, filter])`](#c_unitaurasgetbuffdatabyindexunit-index-filter--getdebuffdatabyindexunit-index-filter)
@@ -280,6 +295,41 @@ registry-keyed lookup so it survives past the addon-load flow's
 terminal `lua_settop(L, -2)` that would otherwise drop it for GC.
 Same effective shape as modern WoW's `C_AddOns.GetAddOnLocalTable`.
 
+
+### `C_AddOns.IsAddOnLoaded(name)`
+
+Returns two booleans for an addon: `loadedOrLoading`, then `loaded`.
+`name` is the addon's folder name, or an index from `1` to
+`GetNumAddOns()`.
+
+```lua
+local loadedOrLoading, loaded = C_AddOns.IsAddOnLoaded("Blizzard_AuctionUI")
+if not loadedOrLoading then
+    LoadAddOn("Blizzard_AuctionUI")
+end
+```
+
+`loadedOrLoading` turns `true` as soon as the addon starts loading, so
+it is already `true` inside the addon's own files; `loaded` turns `true`
+once it has finished, just before its `ADDON_LOADED` fires. Both are `false` for an addon that isn't installed.
+Blizzard addons can only be checked by name — the index range covers
+the AddOns list, which doesn't include them.
+
+### `C_AddOns.GetAddOnOptionalDependencies(name)`
+
+Returns the addons listed in an addon's `## OptionalDeps` TOC line, as
+separate return values in the order they appear. `name` is the
+addon's folder name or an index, as for `C_AddOns.IsAddOnLoaded`.
+
+```lua
+-- ## OptionalDeps: Ace3, LibSharedMedia-3.0
+local deps = { C_AddOns.GetAddOnOptionalDependencies("MyAddon") }
+-- deps = { "Ace3", "LibSharedMedia-3.0" }
+```
+
+Returns nothing for an addon without optional dependencies or one that
+isn't installed. The required list (`## Dependencies`) comes from the
+stock `GetAddOnDependencies`.
 ---
 
 ## Chat Bubbles
@@ -321,7 +371,7 @@ every active bubble is returned.
 ## Color
 
 `C_ColorUtil` — color-space conversions and text-color-code helpers. The
-`ColorMixin` from [`CreateColor`](https://github.com/brues-code/WrathClassicAPI/blob/v1.7.0/AddOns/!!!WrathClassicAPI/Util/Color.lua) uses
+`ColorMixin` from [`CreateColor`](https://github.com/brues-code/WrathClassicAPI/blob/v1.8.0/AddOns/!!!WrathClassicAPI/Util/Color.lua) uses
 these for its `:GenerateHexColor`, `:GetHSL`, and `:WrapTextInColorCode` methods.
 
 Conventions: hue is in **degrees** `[0, 360)`; saturation / value / lightness are
@@ -521,6 +571,36 @@ source stack as the client currently knows it. Several calls in one frame get
 no server replies in between, so those counts are still pre-batch values while
 your own model has moved on. Drive a batch from your own bookkeeping.
 
+
+### `C_Container.GetContainerItemRepairCost(bagID, slot)`
+
+Returns the copper it costs to repair the item in a bag slot. It's the
+same value `GameTooltip:SetBagItem` returns as its repair cost.
+
+```lua
+local cost = C_Container.GetContainerItemRepairCost(0, 1)  -- backpack slot 1
+```
+
+`bagID` is `0` for the backpack, `1`–`4` for your bags, `-1` for the
+bank, `5`–`11` for bank bags and `-2` for the keyring; bank slots only
+resolve while the bank is open. Returns `0` for an empty slot and for an
+item that doesn't need or can't take repair. While a merchant window is
+open, the cost includes that merchant's reputation discount.
+
+### `C_Container.CalculateTotalNumberOfFreeBagSlots()`
+
+Returns how many empty slots you have across your backpack and four
+bags.
+
+```lua
+if C_Container.CalculateTotalNumberOfFreeBagSlots() == 0 then
+    print("Your bags are full")
+end
+```
+
+Only general-purpose bags count. Profession bags (herb, mining, soul
+shard, quiver, ammo pouch and so on) are left out, since most items can't
+go in them. The bank isn't included.
 ---
 
 ## CVar
@@ -756,6 +836,44 @@ C_EventUtils.IsEventValid("NOT_A_REAL_EVENT")       -- false
 Calls into the engine's own event-name hash table, so it covers
 every stock event plus any custom event WrathClassicAPI has appended.
 
+### `Frame:RegisterUnitEvent(event, unit1 [, unit2, ...])`
+
+Registers the frame for `event`, but only delivers it when the event's
+first argument is one of the given unit tokens. Returns `true` if the
+event exists and the frame is now registered.
+
+```lua
+local f = CreateFrame("Frame")
+f:RegisterUnitEvent("UNIT_HEALTH", "player", "target")
+f:SetScript("OnEvent", function(self, event, unit)
+    print(event, unit)  -- only "player" or "target"
+end)
+```
+
+- Unit tokens compare case-insensitively. Non-string arguments are
+  ignored; with no unit at all, this is a plain `RegisterEvent`.
+- Events whose first argument isn't a string are delivered unfiltered.
+- On a frame already registered with `RegisterUnitEvent`, the new units
+  replace the old ones.
+- On a frame already registered with `RegisterEvent`, the registration
+  stays unfiltered. Call `UnregisterEvent` first to switch.
+- `RegisterEvent` on a unit-filtered registration keeps the filter.
+- `UnregisterEvent` and `UnregisterAllEvents` remove the filter.
+
+### `Frame:IsEventRegistered(event)`
+
+Returns `true` if the frame is registered for `event`, else `false`.
+For a `RegisterUnitEvent` registration, the units follow, in the order
+they were given.
+
+```lua
+f:RegisterUnitEvent("UNIT_HEALTH", "player", "target")
+f:IsEventRegistered("UNIT_HEALTH")  -- true, "player", "target"
+f:RegisterEvent("PLAYER_LOGIN")
+f:IsEventRegistered("PLAYER_LOGIN") -- true
+f:IsEventRegistered("UNIT_MANA")    -- false
+```
+
 ### `GET_ITEM_INFO_RECEIVED` event
 
 Payload: `itemID, success`
@@ -799,10 +917,9 @@ the server rejected the query. Modern WoW (8.0+) addons listen for
 this to know when `C_QuestLog.GetTitleForQuestID(questID)` will
 return non-nil for a previously uncached quest.
 
-Like its modern counterpart, this fires once per explicit request —
-including for quests that were already cached when the request was
-made (we synthesize the event so addons get a uniform notification
-regardless of cache state).
+It fires for every request, including one for a quest that is
+already cached. Repeated requests for the same quest while its data
+is still loading share one event.
 
 ### `QUEST_TURNED_IN` event
 
@@ -1635,6 +1752,23 @@ items whose stats record isn't cached yet (pair with
 `C_Item.RequestLoadItemData(itemLocation)` if you're querying a
 recently-seen item that might not be loaded).
 
+### `GetInventoryItemRepairCost(invSlot)`
+
+Returns the copper it costs to repair the item you have equipped in
+`invSlot`. It's the same value `GameTooltip:SetInventoryItem` returns
+third.
+
+```lua
+local cost = GetInventoryItemRepairCost(INVSLOT_CHEST)
+if cost > 0 then
+    print(GetCoinTextureString(cost))
+end
+```
+
+Returns `0` for an empty slot and for an item that doesn't need or
+can't take repair. While a merchant window is open, the cost includes
+that merchant's reputation discount; otherwise it's the full price.
+
 ---
 
 ## Macro
@@ -1751,6 +1885,29 @@ end
 Returns `1` before you've entered the world. A `ToggleSheath()` shows up
 right away. To change the state, use `ToggleSheath()`.
 
+### `GetShapeshiftFormID()`
+
+Returns the ID of your current shapeshift form, stance or stealth, or
+`nil` when you aren't in one.
+
+| Class | Form IDs |
+|---|---|
+| Druid | `1` Cat, `2` Tree of Life, `3` Travel, `4` Aquatic, `5` Bear, `8` Dire Bear, `27` Swift Flight, `29` Flight, `31` Moonkin |
+| Warrior | `17` Battle, `18` Defensive, `19` Berserker |
+| Shaman | `16` Ghost Wolf |
+| Rogue | `13` Shadow Dance, `30` Stealth |
+| Priest | `28` Shadowform, `32` Spirit of Redemption |
+| Warlock | `22` Metamorphosis |
+
+```lua
+if GetShapeshiftFormID() == 1 then
+    -- in Cat Form
+end
+```
+
+Returns `nil` before you've entered the world. A `CancelShapeshiftForm()`
+shows up right away. `UPDATE_SHAPESHIFT_FORM` fires when the form changes.
+
 ---
 
 ## Quest Log
@@ -1855,7 +2012,8 @@ Kicks off a `CMSG_QUEST_QUERY` for `questID` if its data isn't
 already cached, then fires
 [`QUEST_DATA_LOAD_RESULT(questID, success)`](#quest_data_load_result-event)
 when the response arrives (or immediately, if it was already
-cached).
+cached). A request made at login or during a loading screen is
+sent when the player enters the world, so the event still fires.
 
 ```lua
 local function ReadyTitle(questID, callback)
@@ -2188,6 +2346,36 @@ engine's native `IsSpellKnown`** — that one walks the displayable
 spellbook arrays, which famously don't include profession recipes
 in 3.3.5 (per Wowhead: "as of 3.0.8, does not work for profession
 spells"). `IsPlayerSpell` closes that gap.
+
+### `C_Spell.DoesSpellExist(spellIdentifier)`
+
+Returns `true` if `spellIdentifier` names a spell the client has data
+for, else `false`. `spellIdentifier` is a spell ID, name,
+`"name(subtext)"`, or spell link.
+
+```lua
+C_Spell.DoesSpellExist(133)             -- true (Fireball)
+C_Spell.DoesSpellExist(999999)          -- false
+C_Spell.DoesSpellExist("Fireball")      -- true only if Fireball is in your spellbook
+```
+
+A name only resolves when the spell is in your (or your pet's)
+spellbook, so `false` for a name can just mean you don't know it.
+
+### `C_Spell.CancelSpellByID(spellID)`
+
+Cancels your aura from `spellID`, the same as right-clicking its buff
+icon. Returns nothing.
+
+```lua
+C_Spell.CancelSpellByID(1126)   -- Mark of the Wild
+C_Spell.CancelSpellByID(2383)   -- Find Herbs
+```
+
+Does nothing when you don't have the aura or can't cancel it. You can
+cancel a helpful aura or a channelled spell; harmful auras can't be
+cancelled. Dismissing a mount or companion pet this way works like
+clicking its buff.
 
 ### `C_Spell.GetSpellInfo(spellIdentifier)`
 
@@ -2824,7 +3012,7 @@ snapshot:
 ~190 named colors. Modern Blizzard's `Blizzard_SharedXMLBase/Color.lua`
 loops the same shape to build `_G[baseTag]` globals (e.g.
 `_G.NORMAL_FONT_COLOR`). The companion addon
-[`!!!WrathClassicAPI`](https://github.com/brues-code/WrathClassicAPI/blob/v1.7.0/AddOns/!!!WrathClassicAPI/Util/Color.lua)
+[`!!!WrathClassicAPI`](https://github.com/brues-code/WrathClassicAPI/blob/v1.8.0/AddOns/!!!WrathClassicAPI/Util/Color.lua)
 does this loop for you so `NORMAL_FONT_COLOR` etc. are populated as
 real `ColorMixin` instances.
 
@@ -3049,6 +3237,79 @@ Works for any unit in range — anyone's summons, not just your own. Note this
 is the *summoning* spell; the spells a totem casts are server-side and never
 reach the client.
 
+### `UnitSubName(unit)`
+
+Returns the subtitle the unit's tooltip shows under its name, or `nil`
+when it has none.
+
+```lua
+UnitSubName("target")  -- "Innkeeper"
+UnitSubName("player")  -- nil
+```
+
+Returns `nil` for players, for player pets, and for a creature whose
+information hasn't arrived from the server yet.
+
+### `UnitOwnerGUID(unit)`
+
+Returns the GUID of the unit's owner: whoever is charming it, or else
+whoever summoned it (a pet's, guardian's or totem's caster). Returns
+`nil` when the unit has no owner.
+
+```lua
+if UnitOwnerGUID("target") == UnitGUID("player") then
+    -- the target is your pet, guardian or totem
+end
+```
+
+Players and ordinary creatures have no owner. A player who is mind
+controlled returns the GUID of whoever controls them.
+
+### `UnitCreatureID(unit)`
+
+Returns the unit's creature ID — the NPC ID databases such as Wowhead
+list — or `nil`.
+
+```lua
+UnitCreatureID("target")  -- 448 for Hogger, nil for a player
+UnitCreatureID("pet")     -- your pet's creature ID
+```
+
+Returns `nil` for players and for a token that names no unit.
+
+### `UnitCreatureTypeID(unit)`
+
+Returns the ID of the unit's creature type, or `nil`. This is the type
+`UnitCreatureType` names, as a number that's the same in every locale.
+
+| ID | Type | ID | Type |
+|---|---|---|---|
+| `1` | Beast | `7` | Humanoid |
+| `2` | Dragonkin | `8` | Critter |
+| `3` | Demon | `9` | Mechanical |
+| `4` | Elemental | `10` | Not specified |
+| `5` | Giant | `11` | Totem |
+| `6` | Undead | `12` | Non-combat Pet |
+| | | `13` | Gas Cloud |
+
+```lua
+if UnitCreatureTypeID("target") == 6 then
+    -- the target is Undead
+end
+```
+
+A shapeshifted unit reports its form's type — a druid in Cat Form is a
+Beast. Players report their race's type.
+
+### `UnitGUID("player")`
+
+Returns your GUID from the moment addons start loading, so main-chunk
+code and `ADDON_LOADED` handlers can use it.
+
+```lua
+local playerGUID = UnitGUID("player")  -- "0x0000000000000042"
+```
+
 ---
 
 ## Unit Auras
@@ -3256,7 +3517,7 @@ Lookup logic mirrors modern: returns `_G["DEBUFF_TYPE_<TYPE>_COLOR"]`
 if some addon has already wrapped the entry as a ColorMixin global,
 otherwise falls back to a plain `{r, g, b, a}` table decoded from
 the embedded `GlobalColor.dbc` snapshot
-([`UI::ColorData`](https://github.com/brues-code/WrathClassicAPI/blob/v1.7.0/src/ui/ColorData.h)). The `Enrage` row is a
+([`UI::ColorData`](https://github.com/brues-code/WrathClassicAPI/blob/v1.8.0/src/ui/ColorData.h)). The `Enrage` row is a
 ClassicAPI extension carried in the same data file — Blizzard
 dropped it from `GlobalColor.dbc` in BC Classic, so we re-add it
 so consumers don't get the `NONE` fallback for enrage debuffs.
@@ -3450,7 +3711,7 @@ Non-supported in this build:
 - Negative `bagID` (keyring, bank) — these correspond to slots
   outside the standard equipment+bag range and use different invMgr
   paths in the engine. Add when an addon actually needs it; deferred
-  per [TODO §3](https://github.com/brues-code/WrathClassicAPI/blob/v1.7.0/TODO.md).
+  per [TODO §3](https://github.com/brues-code/WrathClassicAPI/blob/v1.8.0/TODO.md).
 - Non-item GUIDs — `C_Item.*` calls type-check the GUID against
   `TYPEMASK_ITEM | TYPEMASK_CONTAINER`, so a unit/player GUID
   passed here returns `nil` (the wrong thing for the call type).
