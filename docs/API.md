@@ -1,9 +1,9 @@
-<!-- Synced from https://github.com/brues-code/WrathClassicAPI/blob/v1.8.0/docs/API.md by the WrathClassicAPI release workflow. Edit it there, not here. -->
+<!-- Synced from https://github.com/brues-code/WrathClassicAPI/blob/v1.9.0/docs/API.md by the WrathClassicAPI release workflow. Edit it there, not here. -->
 
 # WrathClassicAPI — Lua Reference
 
 Per-function reference for the Lua surface WrathClassicAPI adds to the
-3.3.5a Lua environment. See the [project README](https://github.com/brues-code/WrathClassicAPI/blob/v1.8.0/README.md) for
+3.3.5a Lua environment. See the [project README](https://github.com/brues-code/WrathClassicAPI/blob/v1.9.0/README.md) for
 build / install instructions and a high-level summary; this file
 documents shape, semantics, and edge cases per call.
 
@@ -45,6 +45,11 @@ Conventions:
   - [`C_Container.MoveItem(srcBag, srcSlot, dstBag, dstSlot, count)`](#c_containermoveitemsrcbag-srcslot-dstbag-dstslot-count)
   - [`C_Container.GetContainerItemRepairCost(bagID, slot)`](#c_containergetcontaineritemrepaircostbagid-slot)
   - [`C_Container.CalculateTotalNumberOfFreeBagSlots()`](#c_containercalculatetotalnumberoffreebagslots)
+- [Cooldown](#cooldown)
+  - [`Cooldown` frame methods](#cooldown-frame-methods)
+  - [Countdown numbers](#countdown-numbers)
+  - [`<Cooldown>` XML](#cooldown-xml)
+  - [Cooldown helpers](#cooldown-helpers)
 - [CVar](#cvar)
   - [`C_CVar.GetCVar(name)` / `C_CVar.SetCVar(name, value [, scriptCVar])` / `C_CVar.GetCVarDefault(name)` / `C_CVar.RegisterCVar(name [, value])`](#c_cvargetcvarname--c_cvarsetcvarname-value--scriptcvar--c_cvargetcvardefaultname--c_cvarregistercvarname--value)
   - [`C_CVar.GetCVarBool(name)`](#c_cvargetcvarboolname)
@@ -53,6 +58,9 @@ Conventions:
   - [`C_CVar.AreCVarsLoaded()`](#c_cvararecvarsloaded)
   - [`C_CVar.GetCVarBitfield(name, index)` / `C_CVar.SetCVarBitfield(name, index, value)`](#c_cvargetcvarbitfieldname-index--c_cvarsetcvarbitfieldname-index-value)
   - [`C_CVar.SetTempCVar(name, value)` / `C_CVar.RemoveTempCVar(name)`](#c_cvarsettempcvarname-value--c_cvarremovetempcvarname)
+- [Duration](#duration)
+  - [`C_DurationUtil.CreateDuration()`](#c_durationutilcreateduration)
+  - [`UnitCastingDuration(unit)` / `UnitChannelDuration(unit)`](#unitcastingdurationunit--unitchanneldurationunit)
 - [Encoding](#encoding)
   - [`C_EncodingUtil.EncodeHex` / `DecodeHex`](#c_encodingutilencodehex--decodehex)
   - [`C_EncodingUtil.EncodeBase64` / `DecodeBase64`](#c_encodingutilencodebase64--decodebase64)
@@ -77,6 +85,7 @@ Conventions:
   - [`CURSOR_CHANGED` event](#cursor_changed-event)
   - [`WEAPON_SLOT_CHANGED` event](#weapon_slot_changed-event)
   - [`HEARTHSTONE_BOUND` event](#hearthstone_bound-event)
+  - [`INCOMING_RESURRECT_CHANGED` event](#incoming_resurrect_changed-event)
 - [Expansion](#expansion)
   - [`GetClassicExpansionLevel()`](#getclassicexpansionlevel)
   - [`ClassicExpansionAtLeast(level)`](#classicexpansionatleastlevel)
@@ -125,8 +134,16 @@ Conventions:
 - [Mixins](#mixins)
   - [`Mixin(object, ...)` / `CreateFromMixins(...)`](#mixinobject--createfrommixins)
   - [`CreateAndInitFromMixin(mixin, ...)`](#createandinitfrommixinmixin-)
+- [Model Scene](#model-scene)
+  - [`ModelScene` frame methods](#modelscene-frame-methods)
+  - [`ModelSceneActor` methods](#modelsceneactor-methods)
+  - [Scene templates](#scene-templates)
+  - [`C_ModelInfo`](#c_modelinfo)
+  - [Vectors, splines and cursor helpers](#vectors-splines-and-cursor-helpers)
 - [Player Info](#player-info)
   - [`C_PlayerInfo.CanUseItem(item)`](#c_playerinfocanuseitemitem)
+  - [`C_PlayerInfo.GetAlternateFormInfo()`](#c_playerinfogetalternateforminfo)
+  - [`C_Glue.IsOnGlueScreen()`](#c_glueisongluescreen)
   - [`GetSheathState()`](#getsheathstate)
   - [`GetShapeshiftFormID()`](#getshapeshiftformid)
 - [Quest Log](#quest-log)
@@ -167,6 +184,12 @@ Conventions:
   - [`C_Spell.IsSpellHarmful` / `IsSpellHelpful`](#c_spellisspellharmfulspellidentifier--isspellhelpfulspellidentifier)
   - [`C_Spell.IsSelfBuff(spellIdentifier)`](#c_spellisselfbuffspellidentifier)
   - [`CanDualWield()`](#candualwield)
+- [Status Bar](#status-bar)
+  - [`StatusBar` fill methods](#statusbar-fill-methods)
+  - [`StatusBar` easing](#statusbar-easing)
+  - [`StatusBar` timer](#statusbar-timer)
+- [String Util](#string-util)
+  - [`C_StringUtil.CreateNumericRuleFormatter()`](#c_stringutilcreatenumericruleformatter)
 - [Swing Timer](#swing-timer)
   - [`C_SwingTimer.EnableRangeCheck(swingType, enable)`](#c_swingtimerenablerangecheckswingtype-enable)
   - [`C_SwingTimer.IsTargetWithinSwingRange(swingType)`](#c_swingtimeristargetwithinswingrangeswingtype)
@@ -181,6 +204,7 @@ Conventions:
   - [`Texture:GetNumMaskTextures()`](#texturegetnummasktextures)
   - [`Texture:GetMaskTexture(index)`](#texturegetmasktextureindex)
   - [`Texture:SetMask(path)`](#texturesetmaskpath)
+  - [`Texture:SetDesaturation(amount)` / `Texture:GetDesaturation()`](#texturesetdesaturationamount--texturegetdesaturation)
 - [Time](#time)
   - [`GetServerTime()`](#getservertime)
   - [`C_DateAndTime.GetCurrentCalendarTime()`](#c_dateandtimegetcurrentcalendartime)
@@ -217,6 +241,7 @@ Conventions:
   - [`UnitOwnerGUID(unit)`](#unitownerguidunit)
   - [`UnitCreatureID(unit)`](#unitcreatureidunit)
   - [`UnitCreatureTypeID(unit)`](#unitcreaturetypeidunit)
+  - [`UnitHasIncomingResurrection(unit)`](#unithasincomingresurrectionunit)
   - [`UnitGUID("player")`](#unitguidplayer)
 - [Unit Auras](#unit-auras)
   - [`C_UnitAuras.GetAuraDataByIndex(unit, index[, filter])`](#c_unitaurasgetauradatabyindexunit-index-filter)
@@ -229,6 +254,9 @@ Conventions:
   - [`C_UnitAuras.GetAuraDispelTypeColor(type)`](#c_unitaurasgetauradispeltypecolortype)
   - [`AuraData` table shape](#auradata-table-shape)
 - [XML Templates](#xml-templates)
+  - [`mixin="Name, ..."`](#mixinname-)
+  - [`<KeyValues>`](#keyvalues)
+  - [`<Scripts>` `method="Name"`](#scripts-methodname)
   - [`C_XMLUtil.DoesTemplateExist(templateName)`](#c_xmlutildoestemplateexisttemplatename)
   - [`C_XMLUtil.GetTemplateInfo(templateName)`](#c_xmlutilgettemplateinfotemplatename)
   - [`C_XMLUtil.GetTemplates()`](#c_xmlutilgettemplates)
@@ -371,7 +399,7 @@ every active bubble is returned.
 ## Color
 
 `C_ColorUtil` — color-space conversions and text-color-code helpers. The
-`ColorMixin` from [`CreateColor`](https://github.com/brues-code/WrathClassicAPI/blob/v1.8.0/AddOns/!!!WrathClassicAPI/Util/Color.lua) uses
+`ColorMixin` from [`CreateColor`](https://github.com/brues-code/WrathClassicAPI/blob/v1.9.0/AddOns/!!!WrathClassicAPI/Util/Color.lua) uses
 these for its `:GenerateHexColor`, `:GetHSL`, and `:WrapTextInColorCode` methods.
 
 Conventions: hue is in **degrees** `[0, 360)`; saturation / value / lightness are
@@ -601,6 +629,122 @@ end
 Only general-purpose bags count. Profession bags (herb, mining, soul
 shard, quiver, ammo pouch and so on) are left out, since most items can't
 go in them. The bank isn't included.
+
+---
+
+## Cooldown
+
+A `Cooldown` frame draws a dark sweep over its frame while a cooldown
+runs, a flash when it ends, and, if you turn them on, countdown numbers.
+Create one with `CreateFrame("Cooldown")` or a `<Cooldown>` XML element.
+
+```lua
+local cd = CreateFrame("Cooldown", nil, button)
+cd:SetAllPoints()
+cd:SetScript("OnCooldownDone", function(self) print("ready") end)
+cd:SetCooldown(GetTime(), 8)
+```
+
+Times you pass in are in seconds, on the `GetTime()` clock. Times the
+getters return are in milliseconds.
+
+### `Cooldown` frame methods
+
+A `Cooldown` has every `Frame` method. The flag setters read `true`,
+`false`, numbers, and the strings XML uses (`"true"`, `"1"`). Called with
+no argument, they turn the flag on.
+
+| Method | Description |
+|---|---|
+| `SetCooldown(start, duration [, modRate])` | Starts a cooldown of `duration` seconds at `start`, and shows the frame. `modRate` (default `1`) scales the end flash and `GetCooldownDisplayDuration`. The sweep still ends at `start + duration`. |
+| `SetCooldownDuration(duration [, modRate])` | Starts a cooldown now. |
+| `SetCooldownFromExpirationTime(expirationTime, duration [, modRate])` | Starts a cooldown that ends at `expirationTime`. |
+| `Clear()` | Ends the cooldown and hides the frame, without the flash or `OnCooldownDone`. |
+| `GetCooldownTimes()` | Returns `start, duration` in milliseconds. While the end flash plays, they are the flash's. After `Clear`, both are `0`. |
+| `GetCooldownDuration()` | Returns the duration from `GetCooldownTimes`. |
+| `GetCooldownDisplayDuration()` | Returns that duration divided by `modRate`. |
+| `Pause()` / `Resume()` / `SetPaused(paused)` / `IsPaused()` | Stops the sweep and the flash where they are. Resuming continues from there. |
+| `SetReverse(reverse)` / `GetReverse()` | A reverse sweep covers the part that has passed, so the frame darkens as the cooldown runs. At the end it stays fully covered, with no flash, until you hide it. |
+| `SetDrawSwipe(draw)` / `GetDrawSwipe()` | Draws the dark sweep. Default on. |
+| `SetDrawEdge(draw)` / `GetDrawEdge()` | Draws a bright line along the sweep's edge. Default off. |
+| `SetDrawBling(draw)` / `GetDrawBling()` | Plays the flash when the cooldown ends. Default on. With it off, the frame hides at the end. |
+| `SetSwipeColor(r, g, b [, a])` | The sweep's colour. Default black at alpha `0.63`. |
+| `SetEdgeColor(r, g, b [, a])` | The edge line's colour. Default white. |
+| `SetSwipeTexture(file [, r, g, b [, a]])` | The sweep's texture, stretched over the frame. |
+| `SetEdgeTexture(file [, r, g, b [, a]])` | The edge line's texture. It turns with the sweep. |
+| `SetBlingTexture(file [, r, g, b [, a]])` | The end flash's texture. Default colour `(0.31, 0.63, 1)`. |
+| `SetRotation(radians)` / `GetRotation()` | Where the sweep starts, clockwise from 12 o'clock. Default `0`. |
+| `GetCountdownFontString()` | Returns the `FontString` that shows the countdown numbers. |
+| `SetHideCountdownNumbers(hide)` / `GetHideCountdownNumbers()` | Hides this frame's countdown numbers. Default off. |
+| `SetCountdownAbbrevThreshold(seconds)` / `GetCountdownAbbrevThreshold()` | Between one minute and one hour, time left under this shows as `m:ss`, and above it as whole minutes. Default `120`. |
+| `SetCountdownMillisecondsThreshold(seconds)` / `GetCountdownMillisecondsThreshold()` | Time left under this shows tenths, such as `4.3`. Default `0`. |
+| `SetMinimumCountdownDuration(milliseconds)` / `GetMinimumCountdownDuration()` | Only a cooldown longer than this shows numbers. It is compared with the whole duration, not the time left. Default `2000`. |
+| `SetCountdownFormatter([formatter])` / `GetCountdownFormatter()` | Lets a [`NumericRuleFormatter`](#c_stringutilcreatenumericruleformatter) write the numbers from the seconds left. `nil` goes back to the built-in numbers. |
+
+The three texture setters take a file path, or `""` for a solid colour.
+Without `r, g, b` the colour stays as it was. A file that does not load
+draws nothing.
+
+`OnCooldownDone(self)` runs once when a cooldown ends, as the flash
+starts. It does not run after `Clear`, or for a cooldown of zero length.
+A frame shown again after its cooldown ended hides itself, except a
+reverse one, which stays covered.
+
+### Countdown numbers
+
+Countdown numbers show on every `Cooldown` while the `countdownForCooldowns`
+CVar is `1`. It is `0` by default:
+
+```lua
+SetCVar("countdownForCooldowns", "1")
+```
+
+A frame shows numbers while its sweep runs, unless it hides them or its
+cooldown is not longer than its minimum duration. The time left is
+rounded up: `57`, `1:56`, `3m`, `2h`, `2d`, and `4.3` under the
+milliseconds threshold. The font string is `Fonts\FRIZQT__.TTF` at size
+16 with an outline, centred on the frame. Change it with the font string's
+own methods.
+
+A countdown formatter gets the seconds left without rounding, and writes
+the whole text. The frame shares the formatter, so later changes to its
+breakpoints show. A format error shows no numbers.
+`GetCountdownFormatter()` returns a new object for the same formatter
+each time.
+
+```lua
+local tenths = C_StringUtil.CreateNumericRuleFormatter()
+tenths:AddBreakpoint({ threshold = 0, format = "|cffff8000%.1f|r" })
+cd:SetCountdownFormatter(tenths)
+```
+
+### `<Cooldown>` XML
+
+Attributes: `reverse`, `drawEdge`, `drawSwipe`, `drawBling`,
+`hideCountdownNumbers`, `minimumCountdownDuration` (milliseconds) and
+`rotation` (degrees). Child elements: `<SwipeTexture>`, `<EdgeTexture>` and
+`<BlingTexture>`, each with a `file` attribute and an optional `<Color>`.
+
+```xml
+<Cooldown name="$parentCooldown" drawEdge="true" rotation="90">
+    <Anchors><Anchor point="TOPLEFT"/><Anchor point="BOTTOMRIGHT"/></Anchors>
+    <SwipeTexture file="Interface\Buttons\WHITE8X8">
+        <Color r="0" g="0" b="0" a="0.7"/>
+    </SwipeTexture>
+    <Scripts>
+        <OnCooldownDone>print("ready")</OnCooldownDone>
+    </Scripts>
+</Cooldown>
+```
+
+### Cooldown helpers
+
+| Function | Description |
+|---|---|
+| `CooldownFrame_Set(self, start, duration, enable [, forceShowDrawEdge [, modRate]])` | Starts the cooldown when `enable` is true or non-zero and `start` and `duration` are above `0`, with the edge line set from `forceShowDrawEdge`. Otherwise clears it. |
+| `CooldownFrame_Clear(self)` | Clears the cooldown. |
+| `CooldownFrame_SetDisplayAsPercentage(self, percentage)` | Shows a paused sweep with `percentage` (`0` to `1`) of the cooldown done. |
+
 ---
 
 ## CVar
@@ -728,6 +872,73 @@ without touching the user's saved settings.
 Both raise the same errors as `SetCVar`: for a name that isn't a cvar, and
 for a read-only cvar. A cvar that only takes effect after a restart can't be
 set for the session, so both raise an error for one of those too.
+
+---
+
+## Duration
+
+### `C_DurationUtil.CreateDuration()`
+
+Returns a new `LuaDurationObject`: a span of time with a start, a total
+length and a mod rate. A new object is a zero span at time `0`. Times are
+`GetTime()` seconds.
+
+```lua
+local d = C_DurationUtil.CreateDuration()
+d:SetTimeFromStart(GetTime(), 8)
+d:GetRemainingDuration()   -- 8, then less each frame
+d:GetElapsedPercent()      -- 0 to 1
+```
+
+| Method | Description |
+|---|---|
+| `SetTimeFromStart(startTime, duration [, modRate])` | Sets the span to `duration` seconds from `startTime`. |
+| `SetTimeFromEnd(endTime, duration [, modRate])` | Sets the span to `duration` seconds that end at `endTime`. |
+| `SetTimeSpan(startTime, endTime)` | Sets the span from `startTime` to `endTime`, with a mod rate of `1`. An end before the start gives a zero span at `startTime`. |
+| `Reset()` / `SetToDefaults()` | Makes the span a zero span at time `0`, with a mod rate of `1`. |
+| `Assign(other)` | Copies the span of another duration object into this one. |
+| `Copy()` | Returns a new duration object with the same span. A change to one does not change the other. |
+| `GetStartTime([modifier])` / `GetEndTime([modifier])` | Returns the start or the end. |
+| `GetTotalDuration([modifier])` | Returns the length. |
+| `GetElapsedDuration([modifier])` / `GetRemainingDuration([modifier])` | Returns the time gone and the time left. Before the start, nothing has gone. After the end, nothing is left. |
+| `GetElapsedPercent([modifier])` / `GetRemainingPercent([modifier])` | The same, as a part of the length, from `0` to `1`. A zero span is all gone. |
+| `HasStarted([modifier])` / `HasExpired([modifier])` / `IsActive([modifier])` | Returns `true` at or after the start, at or after the end, and between the two. A zero span has started and expired. |
+| `IsZero()` | Returns `true` when the length is `0`. |
+| `GetModRate()` | Returns the mod rate. |
+| `FormatElapsedDuration(formatter [, modifier])` / `FormatRemainingDuration(...)` / `FormatTotalDuration(...)` | Returns the time gone, the time left or the length as text, made by a `NumericRuleFormatter` (see [`C_StringUtil.CreateNumericRuleFormatter`](#c_stringutilcreatenumericruleformatter)). |
+| `GetClock()` | Returns `nil`: the span runs on `GetTime()`. |
+| `GetClockTime()` | Returns `GetTime()`. |
+| `HasSecretValues()` | Returns `false`. |
+
+`modifier` is an `Enum.DurationTimeModifier`: `RealTime` (`0`, the
+default) or `BaseTime` (`1`). The mod rate changes only `BaseTime`
+answers: in base time the length is the real length divided by the mod
+rate, from the same start. So at 1 second into a 4 second span with a
+mod rate of `2`, the base time length is 2 seconds and 1 second is left.
+
+A wrong argument raises an error that shows the method's usage. A mod
+rate must be more than `0`. `tostring(duration)` gives
+`"LuaDurationObject: <address>"`, and `getmetatable(duration)` is `false`.
+
+`StatusBar:SetTimerDuration` takes a duration object; see
+[`StatusBar` timer](#statusbar-timer).
+
+### `UnitCastingDuration(unit)` / `UnitChannelDuration(unit)`
+
+Returns a new duration object for the cast or the channel that
+`UnitCastingInfo(unit)` or `UnitChannelInfo(unit)` returns, or nothing
+when there is none. The span runs from the cast's start time to its end
+time, in seconds.
+
+The object does not change after you get it. When a cast is pushed back,
+call the function again for the new end.
+
+```lua
+local d = UnitCastingDuration("target")
+if d then
+    print(d:GetRemainingDuration())
+end
+```
 
 ---
 
@@ -1195,6 +1406,30 @@ end)
 ```
 
 It doesn't fire at login or when you change maps.
+
+### `INCOMING_RESURRECT_CHANGED` event
+
+Payload: `unitTarget`
+
+Fires when a resurrection cast at a unit starts or stops. `unitTarget` is
+the unit token. The event gives no value.
+[`UnitHasIncomingResurrection`](#unithasincomingresurrectionunit) gives the
+new value.
+
+The event fires one time for each token that names the unit, for example
+`"party1"` and `"target"`. If the cast is at the corpse of a released player,
+`unitTarget` names that player.
+
+```lua
+local f = CreateFrame("Frame")
+f:RegisterEvent("INCOMING_RESURRECT_CHANGED")
+f:SetScript("OnEvent", function(self, event, unitTarget)
+    print(unitTarget, UnitHasIncomingResurrection(unitTarget))
+end)
+```
+
+To get the event for some units only, use
+[`Frame:RegisterUnitEvent`](#frameregisteruniteventevent-unit1--unit2-).
 
 ---
 
@@ -1833,6 +2068,236 @@ local obj = CreateAndInitFromMixin(SomeMixin, arg1, arg2)
 
 ---
 
+## Model Scene
+
+A `ModelScene` is a frame that shows any number of 3D models, called
+actors, through a camera you place yourself. It has its own light and
+fog. Create one with `CreateFrame("ModelScene")` or a `<ModelScene>`
+XML element.
+
+```lua
+local scene = CreateFrame("ModelScene", nil, UIParent)
+scene:SetSize(400, 300)
+scene:SetPoint("CENTER")
+
+-- A camera 14 yards back and 2 yards up, looking at the origin.
+scene:SetCameraPosition(-14, 0, 2)
+scene:SetCameraOrientationByYawPitchRoll(0, 0.1, 0)
+
+local horse = scene:CreateActor()
+horse:SetModelByCreatureDisplayID(2404)  -- Brown Horse
+horse:SetYaw(math.pi / 4)
+```
+
+Coordinates are yards, with +Z up. The camera starts at the origin and
+looks along +X.
+
+### `ModelScene` frame methods
+
+A `ModelScene` has every `Frame` method. `IsObjectType("Model")` is
+false: it has none of the `Model` methods.
+
+| Method | Description |
+|---|---|
+| `CreateActor([name [, template]])` | Adds an actor and returns it. `name` makes a global; `"$parent"` in it stands for the scene's name. `template` names an `<Actor virtual="true">` template. |
+| `GetNumActors()` | Returns how many actors the scene has. |
+| `GetActorAtIndex(index)` | Returns an actor, in creation order. |
+| `SetCameraPosition(x, y, z)` / `GetCameraPosition()` | Moves the camera. |
+| `SetCameraOrientationByYawPitchRoll(yaw, pitch, roll)` | Points the camera. Yaw turns about +Z; a positive pitch looks down. |
+| `SetCameraOrientationByAxisVectors(fx, fy, fz, rx, ry, rz, ux, uy, uz)` | Points the camera by its forward, right and up axes. |
+| `GetCameraForward()` / `GetCameraRight()` / `GetCameraUp()` | Return the camera's axes. |
+| `SetCameraFieldOfView(fov)` / `GetCameraFieldOfView()` | Field of view in radians. Default `0.9424778`. |
+| `SetCameraNearClip(near)` / `GetCameraNearClip()` | Default `0.2`. |
+| `SetCameraFarClip(far)` / `GetCameraFarClip()` | Default `100`. |
+| `Project3DPointTo2D(x, y, z)` | Returns `x, y, depth`: where a scene point appears, from the frame's bottom-left, in the frame's units times its effective scale. Returns nothing for a point at the camera. |
+| `SetDrawLayer(layer)` / `GetDrawLayer()` | The layer the models draw on. Default `"ARTWORK"`. |
+| `SetPaused(paused)` | Stops or restarts every actor's animation. |
+| `SetViewInsets(left, right, top, bottom)` / `GetViewInsets()` | Fits the camera's picture into the frame less these insets. Models still draw to the frame's edges. |
+| `SetViewTranslation(x, y)` / `GetViewTranslation()` | Moves the camera's picture in the frame. |
+| `SetAllowOverlappedModels(allow)` / `GetAllowOverlappedModels()` | Stored for compatibility. Default `false`. |
+| `SetLightType(type)` / `GetLightType()` | `0` directional (default), `1` point. |
+| `SetLightVisible(visible)` / `IsLightVisible()` | Default `true`. |
+| `SetLightDirection(x, y, z)` / `GetLightDirection()` | Default `(0, 1, 0)`. |
+| `SetLightPosition(x, y, z)` / `GetLightPosition()` | Used by a point light. |
+| `SetLightAmbientColor(r, g, b)` / `GetLightAmbientColor()` | Default `0.698` for each channel. |
+| `SetLightDiffuseColor(r, g, b)` / `GetLightDiffuseColor()` | Default `(0.8, 0.8, 0.639)`. |
+| `SetFogColor(r, g, b)` / `GetFogColor()` | Sets the fog colour and turns the fog on. |
+| `SetFogNear(near)` / `GetFogNear()` / `SetFogFar(far)` / `GetFogFar()` | Fog distances. The defaults are too far away to fog anything. |
+| `ClearFog()` | Turns the fog off. |
+
+XML attributes: `drawLayer`, `fogNear`, `fogFar`. Child elements:
+`<FogColor r="" g="" b=""/>` and `<ViewInsets left="" right="" top="" bottom=""/>`.
+
+### `ModelSceneActor` methods
+
+`GetObjectType()` returns `"ModelSceneActor"`. `GetParent()` returns the
+scene. An actor is not a `Frame` or a `Region`.
+
+| Method | Description |
+|---|---|
+| `SetModelByCreatureDisplayID(displayID)` | Shows a creature display, dressed as the world dresses it. Returns `true` on success. |
+| `SetModelByPath(path)` | Shows a model file, such as `"Creature\\Murloc\\Murloc.m2"`. Returns `true` on success. |
+| `SetModelByUnit(unit [, sheatheWeapons [, autoDress [, hideWeapons [, usePlayerNativeForm]]]])` | Shows a unit, such as `"player"` or `"target"`. Returns `true` on success, `false` when the unit does not exist or its model is not ready yet; try again on `UNIT_MODEL_CHANGED`. A player in its native form is shown dressed in what it wears (`autoDress`, default `true`), with weapons sheathed (`sheatheWeapons`, default `false`) or left off (`hideWeapons`, default `false`). With `usePlayerNativeForm` `false` (default `true`), a player in another form, such as cat form, is shown in that form. Any other unit is shown as it looks in the world. |
+| `GetModelUnitGUID()` | The GUID of the unit shown, or `nil`. |
+| `IsGeoReady()` | `true` once the model and its clothing are ready to show. |
+| `TryOn(item [, handSlotName [, spellEnchantmentID]])` | Puts an item on a player shown by `SetModelByUnit`. `item` is an item ID, an item link, an `item:` string, a profession `enchant:` link (the item its recipe makes) or the name of an item. `handSlotName` is `"MAINHANDSLOT"` or `"SECONDARYHANDSLOT"`; without it a one-hander alternates between the hands. `spellEnchantmentID` sets a weapon's glow; the default is the link's enchant. Returns an `Enum.ItemTryOnReason`: `Success` (0), `NotEquippable` (2), or `DataPending` (3) while the item's data loads, after which the item goes on by itself. |
+| `Undress([includeWeapons])` | Takes everything off, the weapons too unless `includeWeapons` is `false`. |
+| `UndressSlot(inventorySlot)` | Takes off one slot, by inventory slot number (1 head ... 16 main hand, 17 off hand, 19 tabard). |
+| `DressPlayerSlot(inventorySlot)` | Puts the unit's own item back in one slot. |
+| `Dress()` | Shows the unit again, dressed in what it wears. |
+| `SetSheathed(sheathed [, hidden])` / `GetSheathed()` | Weapons at the sheath points or in the hands; `hidden` takes them off until the next call. |
+| `SetAutoDress(autoDress)` / `GetAutoDress()` | Whether a unit is shown dressed. `SetModelByUnit` sets it from its argument. |
+| `AttachToMount(rider, animation [, spellKitVisualID])` | Seats `rider`, another actor of the same scene, on this actor's saddle, playing `animation` (such as `91`, mounted). `spellKitVisualID` shows a spell visual kit on the rider. The rider then moves with the mount, and its position, rotation and scale are relative to the saddle. Returns `false` when either actor has no model or the mount has no saddle. A new model on either actor takes the rider off. |
+| `DetachFromMount(rider)` | Takes the rider off this actor. The rider keeps its animation. Returns `false` when the rider is not on this actor. |
+| `CalculateMountScale(rider)` | The size of this mount, the scale of its creature display (`1` for a model not set by `SetModelByCreatureDisplayID`). The rider fits the mount at `1 / scale`. |
+| `ClearModel()` | Removes the model. |
+| `IsLoaded()` | `true` once the model is ready to show. |
+| `GetModelPath()` | The model's file, or `""`. |
+| `SetPosition(x, y, z)` / `GetPosition()` | Where the actor stands. |
+| `SetYaw(yaw)` / `SetPitch(pitch)` / `SetRoll(roll)` and their getters | Radians. Yaw turns about +Z. |
+| `SetScale(scale)` / `GetScale()` | Default `1`. |
+| `SetAlpha(alpha)` / `GetAlpha()` | `0` to `1`, times the scene's alpha. |
+| `SetUseCenterForOrigin(x, y, z)` / `IsUsingCenterForOrigin()` | For each axis, centres the model's current bounding box on the actor's position. |
+| `Show()` / `Hide()` / `SetShown(shown)` / `IsShown()` | |
+| `IsVisible()` | Shown, and the scene is visible. |
+| `SetAnimation(animID [, variation [, speed [, offsetSeconds]]])` | Plays an animation. It loops. |
+| `GetAnimation()` / `GetAnimationVariation()` | The variation reads `4294967295` when none was given. |
+| `SetAnimationBlendOperation(op)` / `GetAnimationBlendOperation()` | `Enum.ModelBlendOperation`: `None` (0) or `Anim` (1, default), whether a new animation blends from the old one. |
+| `SetPaused(paused [, affectsGlobalPause])` / `GetPaused()` | Holds the animation on its current frame. `GetPaused` returns the actor's flag, then the global one. |
+| `SetSpellVisualKit([kitID [, oneShot]])` / `GetSpellVisualKit()` | Shows a spell visual kit's effects on the model, at the model's attachment points, with the kit's tint and alpha. With `oneShot` the effects play once; without it they stay until the kit or the model changes. `0` or no ID removes the kit. A new model shows the same kit. |
+| `PlayAnimationKit(animationKit [, isLooping])` / `StopAnimationKit()` | Have no effect: this client has no animation kits. |
+| `GetActiveBoundingBox()` | Six numbers, bottom `x, y, z` then top `x, y, z`, of the current animation, in model space. Nothing until the model loads. |
+| `GetMaxBoundingBox()` | The same for the whole model. |
+| `GetObjectType()` / `IsObjectType(type)` / `GetName()` / `GetParent()` | |
+| `HasScript(type)` / `GetScript(type)` / `SetScript(type, func)` / `HookScript(type, func)` | |
+
+Actor scripts: `OnLoad`, `OnUpdate(self, elapsed)`, `OnModelLoading`
+(a model was set), `OnModelLoaded`, `OnModelCleared` and
+`OnAnimFinished` (each time the animation reaches its end).
+
+```lua
+local murloc = scene:CreateActor()
+murloc:SetScript("OnModelLoaded", function(self)
+    local bx, by, bz, tx, ty, tz = self:GetActiveBoundingBox()
+    print("height", tz - bz)
+end)
+murloc:SetModelByPath("Creature\\Murloc\\Murloc.m2")
+murloc:SetAnimation(4)  -- walk
+```
+
+An actor template is a top-level `<Actor>` element. It takes `name`,
+`virtual="true"`, `inherits`, `mixin`, `alpha`, `scale` and `file`, and
+`<KeyValues>` and `<Scripts>` children. A script element has a body, a
+`function="GlobalName"` attribute or a `method="Name"` attribute (see
+[XML Templates](#xml-templates)).
+
+```xml
+<Actor name="MyActorTemplate" virtual="true" scale="1.5">
+    <Scripts>
+        <OnLoad>self:SetAlpha(0.8)</OnLoad>
+    </Scripts>
+</Actor>
+```
+
+```lua
+local actor = scene:CreateActor(nil, "MyActorTemplate")
+```
+
+### Scene templates
+
+These templates give a scene the standard behaviour: an orbit camera and
+actors laid out from scene data.
+
+| Template | Behaviour |
+|---|---|
+| `NonInteractableModelSceneMixinTemplate` | Lays the scene out from scene data. The mouse does nothing. |
+| `ModelSceneMixinTemplate` | The same, plus mouse control: drag with the left button to turn the camera, use the wheel to zoom. |
+| `NoZoomModelSceneMixinTemplate` | Mouse control without zoom. |
+| `PanningModelSceneMixinTemplate` | Mouse control, and the right button moves the camera target. |
+| `NoCameraControlModelSceneMixinTemplate` | The mouse does not move the camera. |
+| `StoreModelSceneMixinTemplate` | `ModelSceneMixinTemplate` with `allowOverlappedModels` set. |
+| `ModelSceneActorTemplate` | The actor template the scene templates use. It scales a model to its scene data. |
+
+`scene:TransitionToModelSceneID(modelSceneID, cameraTransitionType,
+cameraModificationType [, forceEvenIfSame])` sets up the scene's camera
+and actors from the scene data:
+
+- `cameraTransitionType` is `CAMERA_TRANSITION_TYPE_IMMEDIATE` or
+  `CAMERA_TRANSITION_TYPE_INTERPOLATION`.
+- `cameraModificationType` is `CAMERA_MODIFICATION_TYPE_DISCARD` or
+  `CAMERA_MODIFICATION_TYPE_MAINTAIN`.
+
+`scene:GetActorByTag(tag)` then gives an actor by the tag the scene data
+uses. `scene:GetActiveCamera()` gives the orbit camera.
+
+```xml
+<ModelScene name="MyMountPreview" inherits="ModelSceneMixinTemplate" parent="UIParent">
+    <Size x="300" y="300"/>
+    <Anchors><Anchor point="CENTER"/></Anchors>
+</ModelScene>
+```
+
+```lua
+MyMountPreview:TransitionToModelSceneID(4, CAMERA_TRANSITION_TYPE_IMMEDIATE,
+    CAMERA_MODIFICATION_TYPE_DISCARD, true)
+local mount = MyMountPreview:GetActorByTag("unwrapped")
+mount:SetModelByCreatureDisplayID(2404)
+```
+
+`scene:AttachPlayerToMount(mountActor, animation, isSelfMount,
+disablePlayerMountPreview [, spellVisualKitID [, usePlayerNativeForm]])`
+shows your character on the mount, on the scene's `player-rider` actor,
+with weapons sheathed and left off. With `isSelfMount` or
+`disablePlayerMountPreview` it clears the rider instead.
+
+```lua
+MyMountPreview:AttachPlayerToMount(mount, 91, false, false)
+```
+
+The scene data covers these scenes:
+
+| Scene | Use | Actor tags |
+|---|---|---|
+| 4 | A mount | `unwrapped` (the mount), `wrapped`, `player-rider` |
+| 44 | A large mount, such as a Qiraji battle tank | `unwrapped`, `wrapped`, `player-rider` |
+| 596 | A character | `player` and one tag for each race and gender, such as `orc` or `tauren-male` |
+
+Each scene has one camera, tagged `primary`.
+
+### `C_ModelInfo`
+
+The scene data that the scene templates read.
+
+| Function | Returns |
+|---|---|
+| `C_ModelInfo.GetModelSceneInfoByID(modelSceneID)` | `modelSceneType, modelCameraIDs, modelActorsIDs, flags`. The two ID lists are arrays. |
+| `C_ModelInfo.GetModelSceneCameraInfoByID(modelSceneCameraID)` | `{ modelSceneCameraID, scriptTag, cameraType, target, yaw, pitch, roll, zoomDistance, minZoomDistance, maxZoomDistance, zoomedTargetOffset, zoomedYawOffset, zoomedPitchOffset, zoomedRollOffset, flags }`. `cameraType` is `"OrbitCamera"`; `flags` is `Enum.ModelSceneSetting`. |
+| `C_ModelInfo.GetModelSceneActorInfoByID(modelActorID)` | `{ modelActorID, scriptTag, position, yaw, pitch, roll, normalizeScaleAggressiveness, useCenterForOriginX, useCenterForOriginY, useCenterForOriginZ, modelActorDisplayID }`. `normalizeScaleAggressiveness` and `modelActorDisplayID` can be `nil`. |
+| `C_ModelInfo.GetModelSceneActorDisplayInfoByID(modelActorDisplayID)` | `{ animation, animationVariation, animSpeed, animationKitID, spellVisualKitID, alpha, scale }`. The two kit IDs can be `nil`. |
+| `C_ModelInfo.AddActiveModelScene` / `AddActiveModelSceneActor` / `ClearActiveModelScene` / `ClearActiveModelSceneActor` | Nothing. They have no effect. |
+
+An unknown ID returns nothing. `target`, `zoomedTargetOffset` and
+`position` are `Vector3D` objects.
+
+`Enum.ModelSceneSetting`: `AlignLightToOrbitDelta` (1).
+`Enum.UIModelSceneActorFlag`: `Deprecated1` (1), `UseCenterForOriginX`
+(2), `UseCenterForOriginY` (4), `UseCenterForOriginZ` (8).
+
+### Vectors, splines and cursor helpers
+
+The Lua library that the scene templates use. Addons can use it too.
+
+| Function | Description |
+|---|---|
+| `CreateVector3D(x, y, z)` | A `Vector3DMixin` object, with `GetXYZ`, `SetXYZ`, `ScaleBy`, `DivideBy`, `Add`, `Subtract`, `Cross`, `Dot`, `GetLength`, `GetLengthSquared`, `Normalize`, `IsEqualTo` and `Clone`. |
+| `Vector3D_Add`, `Vector3D_Subtract`, `Vector3D_Cross`, `Vector3D_Dot`, `Vector3D_Normalize` and the other `Vector3D_*` functions | The same operations on plain numbers. |
+| `CreateCatmullRomSpline(numDimensions)` | A Catmull-Rom spline of 1 to 4 dimensions: `AddPoint`, `GetPoint`, `GetNumPoints`, `ClearPoints`, `CalculatePointOnGlobalCurve(t)`. |
+| `GetCursorDelta()` | How far the cursor moved since the last frame, in `GetCursorPosition` units. Every handler in a frame gets the same value. |
+| `InputUtil.GetCursorPosition(parent)` / `InputUtil.GetCursorDelta(parent)` | The same, divided by `parent`'s effective scale. |
+| `GetAppropriateTopLevelParent()` | `UIParent`, or the frame set with `SetAlternateTopLevelParent(frame)` while it is shown. `ClearAlternateTopLevelParent()` removes that frame. |
+
+---
+
 ## Player Info
 
 ### `C_PlayerInfo.CanUseItem(item)`
@@ -1865,6 +2330,16 @@ All of these must pass:
 Reads the item-stats cache; on a cache miss it returns `false` synchronously
 without firing a load (query the item first with `GetItemInfo` if needed). WotLK
 dropped the old PvP-rank item gates, so those aren't checked.
+
+### `C_PlayerInfo.GetAlternateFormInfo()`
+
+Returns `hasAlternateForm, inAlternateForm`: whether the player's race has
+a second form, and whether the player is in it. No race has one, so both
+are `false`.
+
+### `C_Glue.IsOnGlueScreen()`
+
+`true` at the login and character screens, `false` in the world.
 
 ### `GetSheathState()`
 
@@ -2564,6 +3039,168 @@ CanDualWield()   -- true on a rogue; false on a mage
 
 ---
 
+## Status Bar
+
+### `StatusBar` fill methods
+
+| Method | Description |
+|---|---|
+| `SetReverseFill(isReverseFill)` / `GetReverseFill()` | Fills the bar from the right, or from the top when it is vertical. Default `false`. |
+| `SetFillStyle(fillStyle)` / `GetFillStyle()` | How the bar fills as its value grows: an `Enum.StatusBarFillStyle` value, or one of the names `"STANDARD"`, `"STANDARD_NO_RANGE_FILL"`, `"CENTER"` and `"REVERSE"`. Default `Standard`. |
+| `SetColorFill(r, g, b [, a])` | Fills the bar texture with a solid colour. A bar with no texture gets one. |
+| `SetStatusBarDesaturation(desaturation)` / `GetStatusBarDesaturation()` | How much colour the bar texture loses, from `0` (full colour) to `1` (grey): [`SetDesaturation`](#texturesetdesaturationamount--texturegetdesaturation) on the bar texture. A new bar image starts with full colour. |
+| `SetStatusBarDesaturated(desaturated)` / `IsStatusBarDesaturated()` | Sets the desaturation to `1` or `0`. `IsStatusBarDesaturated` returns `true` while it is more than `0`. |
+| `SetRotatesTexture(rotates)` | Draws the bar texture turned a quarter. A bar with no texture keeps the setting. |
+
+A bar with no texture ignores the desaturation setters, and its getters
+return `0` and `false`.
+
+`Enum.StatusBarFillStyle`:
+
+| Name | Value | Fill |
+|---|---|---|
+| `Standard` | `0` | From the left, or from the bottom when vertical. |
+| `StandardNoRangeFill` | `1` | As `Standard`, but a bar whose minimum equals its maximum shows full, unless both are `0`. |
+| `Center` | `2` | From the middle out to both ends. |
+| `Reverse` | `3` | As `SetReverseFill(true)`. |
+
+The bar texture is stretched over the filled part, and hidden while the
+bar is empty.
+
+```lua
+local bar = CreateFrame("StatusBar", nil, UIParent)
+bar:SetSize(200, 16)
+bar:SetPoint("CENTER")
+bar:SetColorFill(0.8, 0.1, 0.1)
+bar:SetFillStyle(Enum.StatusBarFillStyle.Center)
+bar:SetMinMaxValues(0, 100)
+bar:SetValue(40)
+```
+
+XML attributes: `reverseFill` and `fillStyle` (one of the names above).
+
+```xml
+<StatusBar name="MyBar" reverseFill="true" minValue="0" maxValue="100">
+    <BarTexture file="Interface\TargetingFrame\UI-StatusBar"/>
+</StatusBar>
+```
+
+### `StatusBar` easing
+
+`SetValue` and `SetMinMaxValues` take an optional `interpolation`, an
+`Enum.StatusBarInterpolation`. With `ExponentialEaseOut` the fill slides
+to its new place over a few tenths of a second instead of jumping there.
+
+| Method | Description |
+|---|---|
+| `SetValue(value [, interpolation])` | Sets the value. With `ExponentialEaseOut`, the fill eases from where it is shown now. `GetValue` returns the new value at once, and `OnValueChanged` runs once, with it. |
+| `SetMinMaxValues(min, max [, interpolation])` | Sets the range. With `ExponentialEaseOut`, the fill keeps the part of the bar it shows, then eases to its place in the new range. |
+| `GetInterpolatedValue()` | Returns the value the fill shows now: while easing, a value between the old one and the new one. |
+| `IsInterpolating()` | Returns `true` while the fill eases. |
+| `SetToTargetValue()` | Ends the ease and shows the value at once. |
+
+`Enum.StatusBarInterpolation`: `Immediate` (`0`, the default) and
+`ExponentialEaseOut` (`1`). Any other `interpolation` value is treated as
+`Immediate`. A `SetValue` or `SetMinMaxValues` without `ExponentialEaseOut`
+ends an ease. A hidden bar holds its ease until it is shown again.
+
+```lua
+bar:SetValue(UnitHealth("target"), Enum.StatusBarInterpolation.ExponentialEaseOut)
+```
+
+### `StatusBar` timer
+
+| Method | Description |
+|---|---|
+| `SetTimerDuration(duration [, interpolation [, direction]])` | Makes the bar fill by itself from a duration object, on each frame. |
+| `GetTimerDuration()` | Returns a new duration object for the bar's timer, or `nil` when the bar has no timer. |
+
+`direction` is an `Enum.StatusBarTimerDirection`: `ElapsedTime` (`0`, the
+default) fills the bar as the time goes, and `RemainingTime` (`1`) empties
+it. After the end, the bar stays full or empty and keeps its timer. With
+the `interpolation` `Enum.StatusBarInterpolation.ExponentialEaseOut`, the
+fill eases from where it is shown now to the timer's place, then follows
+the timer.
+
+The bar keeps the duration object you give it, not a copy. A change you
+make to the object later shows on the next frame. The object that
+`GetTimerDuration` returns is the same span: a change to it also changes
+the bar.
+
+While the timer runs, `GetValue` and `GetMinMaxValues` return `0`, and
+`OnValueChanged` does not run. `SetValue` does not stop the timer.
+`SetMinMaxValues` stops it. A hidden bar does not move; it shows the
+correct fill on the first frame it is shown again.
+
+```lua
+local d = UnitCastingDuration("player")
+if d then
+    castBar:SetTimerDuration(d)
+end
+```
+
+---
+
+## String Util
+
+### `C_StringUtil.CreateNumericRuleFormatter()`
+
+Returns a `NumericRuleFormatter`, which turns numbers into text by rules
+for ranges of values. Each rule is a breakpoint, and
+`formatter:FormatNumber(value)` uses the breakpoint with the largest
+`threshold` that `value` reaches.
+
+```lua
+local f = C_StringUtil.CreateNumericRuleFormatter()
+local Up, Down = Enum.NumericRuleFormatRounding.Up, Enum.NumericRuleFormatRounding.Down
+f:SetBreakpoints({
+    { threshold = 0, format = "%d", step = 1, rounding = Up },
+    { threshold = 60, format = "%d:%02d", components = {
+        { div = 60, step = 1, rounding = Down },  -- minutes
+        { mod = 60, step = 1, rounding = Down },  -- seconds
+    } },
+})
+f:FormatNumber(4.2)  -- "5"
+f:FormatNumber(125)  -- "2:05"
+f:FormatNumber(-3)   -- "-3": below every threshold
+```
+
+A breakpoint is a table:
+
+| Field | Description |
+|---|---|
+| `threshold` | Required. The smallest value the breakpoint applies to. |
+| `format` | Required. A `string.format` format, with one specifier, or one for each component. |
+| `step` | Rounds the value to a multiple of this first. `0` or less rounds nothing. |
+| `rounding` | How `step` rounds: an `Enum.NumericRuleFormatRounding`. Default `Nearest`. |
+| `min` / `max` | Then raise a smaller value to `min`, and lower a larger one to `max`. |
+| `components` | A list of components. Each one makes one format argument from the value. Without components, the value is the one argument. |
+
+A component is a table of `div` (divide by this), then `mod` (take the
+remainder of a division by this), then `step` and `rounding`, as above.
+Each field is optional. A `div` or `mod` of `0` does nothing.
+
+`Enum.NumericRuleFormatRounding`: `Nearest` (0, a half rounds up), `Up`
+(1), `Down` (2).
+
+| Method | Description |
+|---|---|
+| `AddBreakpoint(breakpoint)` | Adds a breakpoint. Breakpoints with equal thresholds keep the order you add them in. |
+| `SetBreakpoints(breakpoints)` | Replaces every breakpoint with the list. If any entry is wrong, none change. |
+| `GetBreakpoints()` | Returns new tables for the breakpoints, largest threshold first, with every field filled in. `min` and `max` are there only when set. |
+| `ClearBreakpoints()` | Removes every breakpoint. |
+| `Copy()` | Returns a new formatter with the same breakpoints. |
+| `FormatNumber(value)` | Returns the text for `value`, which must be a finite number. Below every threshold, `value` is written as `tostring` writes it. |
+
+A wrong breakpoint field raises an error that names the field. A format
+that asks for more arguments than there are raises an error that starts
+`NumericFormatter:FormatNumber(): `. `tostring(formatter)` gives
+`"NumericRuleFormatter: <address>"`, and `getmetatable(formatter)` is
+`false`. `Cooldown:SetCountdownFormatter` takes a formatter; see
+[Countdown numbers](#countdown-numbers).
+
+---
+
 ## Swing Timer
 
 Your auto-attack timers: when the next main-hand, off-hand and ranged
@@ -2683,8 +3320,8 @@ hidden. These are real methods (`:call`) on every Frame and Texture.
 A texture takes up to 7 masks at once, and every mask is applied
 together. Masks follow the mask's position and size every frame, so
 moving, resizing or animating a mask moves the clip with it. Masks do
-not follow `SetRotation`. A masked texture ignores `SetDesaturated`
-while it has masks.
+not follow `SetRotation`. A masked texture ignores `SetDesaturated` and
+`SetDesaturation` while it has masks.
 
 ### `Frame:CreateMaskTexture([name[, layer[, inherits]]])`
 
@@ -2736,6 +3373,31 @@ mask counts toward the 7-mask limit and applies together with any
 ```lua
 icon:SetMask("Interface\\Minimap\\UI-Minimap-Background")
 ```
+
+### `Texture:SetDesaturation(amount)` / `Texture:GetDesaturation()`
+
+Removes some or all of the colour from a texture. `amount` is a number
+from `0` (full colour) to `1` (grey). Values outside this range are
+clamped. `GetDesaturation` returns the amount.
+
+```lua
+icon:SetDesaturation(0.5)   -- half of the colour is gone
+icon:GetDesaturation()      -- 0.5
+```
+
+`SetDesaturated(true)` is the same as `SetDesaturation(1)`, and
+`SetDesaturated(false)` is the same as `SetDesaturation(0)`. All of these
+change the same setting, so `SetDesaturated(false)` also clears a partial
+amount. `IsDesaturated()` returns `1` while the amount is more than `0`,
+and `nil` at `0`.
+
+- A new image file (`SetTexture(path)`) sets the amount back to `0`, as it
+  does for `SetDesaturated`. A solid colour (`SetTexture(r, g, b)`) keeps it.
+- The grey part does not take the `SetVertexColor` tint, as with
+  `SetDesaturated(true)`. At `0.5`, a tinted texture is half tinted colour
+  and half plain grey.
+- With the `ADD` or `MOD` blend modes, the texture is grey from `0.5` and
+  up, and in full colour below `0.5`.
 
 ---
 
@@ -3012,7 +3674,7 @@ snapshot:
 ~190 named colors. Modern Blizzard's `Blizzard_SharedXMLBase/Color.lua`
 loops the same shape to build `_G[baseTag]` globals (e.g.
 `_G.NORMAL_FONT_COLOR`). The companion addon
-[`!!!WrathClassicAPI`](https://github.com/brues-code/WrathClassicAPI/blob/v1.8.0/AddOns/!!!WrathClassicAPI/Util/Color.lua)
+[`!!!WrathClassicAPI`](https://github.com/brues-code/WrathClassicAPI/blob/v1.9.0/AddOns/!!!WrathClassicAPI/Util/Color.lua)
 does this loop for you so `NORMAL_FONT_COLOR` etc. are populated as
 real `ColorMixin` instances.
 
@@ -3301,6 +3963,32 @@ end
 A shapeshifted unit reports its form's type — a druid in Cat Form is a
 Beast. Players report their race's type.
 
+### `UnitHasIncomingResurrection(unit)`
+
+```
+hasIncomingResurrection = UnitHasIncomingResurrection(unit)
+```
+
+Returns true while somebody casts a resurrection spell at `unit`. Otherwise
+it returns false. If `unit` is a released player, the function also includes
+casts at the corpse of that player.
+
+```lua
+if UnitHasIncomingResurrection("party1") then
+    print(UnitName("party1"), "has an incoming resurrection")
+end
+```
+
+The value changes to true when the cast starts. It changes to false when the
+cast stops, for any reason. This includes a completed cast that the target
+did not accept yet.
+
+You see a cast only when its caster is near you. If the caster goes out of
+range during the cast, the value changes to false.
+
+[`INCOMING_RESURRECT_CHANGED`](#incoming_resurrect_changed-event) fires at
+each change.
+
 ### `UnitGUID("player")`
 
 Returns your GUID from the moment addons start loading, so main-chunk
@@ -3517,7 +4205,7 @@ Lookup logic mirrors modern: returns `_G["DEBUFF_TYPE_<TYPE>_COLOR"]`
 if some addon has already wrapped the entry as a ColorMixin global,
 otherwise falls back to a plain `{r, g, b, a}` table decoded from
 the embedded `GlobalColor.dbc` snapshot
-([`UI::ColorData`](https://github.com/brues-code/WrathClassicAPI/blob/v1.8.0/src/ui/ColorData.h)). The `Enrage` row is a
+([`UI::ColorData`](https://github.com/brues-code/WrathClassicAPI/blob/v1.9.0/src/ui/ColorData.h)). The `Enrage` row is a
 ClassicAPI extension carried in the same data file — Blizzard
 dropped it from `GlobalColor.dbc` in BC Classic, so we re-add it
 so consumers don't get the `NONE` fallback for enrage debuffs.
@@ -3566,9 +4254,61 @@ don't exist here.
 
 ## XML Templates
 
-Introspection of the virtual frame templates (`<Frame virtual="true">`
-and friends) that `inherits=` and `CreateFrame`'s template argument
-resolve against.
+Frames and actors take three more things in XML: a `mixin` attribute,
+`<KeyValues>` and `method` script handlers. Frames include every frame
+type, whether it comes from an XML file or from `CreateFrame` with a
+template. All three work through `inherits`, and a template's settings
+apply to every frame made from it.
+
+### `mixin="Name, ..."`
+
+Each name is a global table. Its fields are copied onto the frame's table,
+as `Mixin(frame, Name, ...)` does. The copy happens before any part of the
+frame loads, so `<KeyValues>`, script handlers and `OnLoad` can use the
+mixin's methods. The templates' mixins go first, in `inherits` order, and
+the frame's own go last. A name that is not a global table is skipped, and
+a warning goes to the XML log.
+
+### `<KeyValues>`
+
+Sets fields on the frame's table when the frame loads, before `OnLoad`.
+The template's values apply first, so the frame's own values win.
+
+```xml
+<Frame name="MyFrame" mixin="MyFrameMixin">
+    <KeyValues>
+        <KeyValue key="layoutIndex" value="3" type="number"/>
+        <KeyValue key="showTooltip" value="true" type="boolean"/>
+        <KeyValue key="tooltipFrame" value="GameTooltip" type="global"/>
+    </KeyValues>
+</Frame>
+```
+
+| Attribute | Notes |
+|-----------|-------|
+| `key` | The field name. Required. |
+| `value` | The value as text. Required unless `type="nil"`. |
+| `type` | `string` (the default), `number`, `boolean`, `nil` or `global`. `global` looks the text up as a global; a dotted path such as `"MyMixin.Modes.Large"` walks one field at a time, and gives `nil` where a step is not a table. |
+| `keyType` | The key's type, from the same list. The default is `string`. |
+
+### `<Scripts>` `method="Name"`
+
+The handler is the frame's own field `self.Name`. This is usually a
+function from its mixin. The field must hold a function when the frame
+loads, or the handler stays empty and a warning goes to the XML log.
+
+```xml
+<Frame name="MyFrame" mixin="MyFrameMixin">
+    <Scripts>
+        <OnLoad method="OnLoad"/>
+        <OnShow method="OnShow"/>
+    </Scripts>
+</Frame>
+```
+
+The functions below look up the virtual frame templates
+(`<Frame virtual="true">` and others) that `inherits=` and the template
+argument of `CreateFrame` use.
 
 ### `C_XMLUtil.DoesTemplateExist(templateName)`
 
@@ -3590,7 +4330,7 @@ that name exists. Case-insensitive.
 | `type` | string | The template's frame type — `"Frame"`, `"Button"`, `"CheckButton"`, `"StatusBar"`, etc. |
 | `width` | number | Declared `<Size>` width, or `0` if the template declares no size. |
 | `height` | number | Declared `<Size>` height, or `0` if the template declares no size. |
-| `keyValues` | table | Always an empty table. |
+| `keyValues` | table | The template's own `<KeyValues>` entries, an array of `{ key, keyType, type, value }`, each as written in the XML. The array is empty when the template has none. |
 | `inherits` | string\|nil | The comma-delimited `inherits=` list, or `nil` if the template inherits nothing. |
 
 Most templates declare no `<Size>` (they're sized by whatever consumes
@@ -3711,7 +4451,7 @@ Non-supported in this build:
 - Negative `bagID` (keyring, bank) — these correspond to slots
   outside the standard equipment+bag range and use different invMgr
   paths in the engine. Add when an addon actually needs it; deferred
-  per [TODO §3](https://github.com/brues-code/WrathClassicAPI/blob/v1.8.0/TODO.md).
+  per [TODO §3](https://github.com/brues-code/WrathClassicAPI/blob/v1.9.0/TODO.md).
 - Non-item GUIDs — `C_Item.*` calls type-check the GUID against
   `TYPEMASK_ITEM | TYPEMASK_CONTAINER`, so a unit/player GUID
   passed here returns `nil` (the wrong thing for the call type).
